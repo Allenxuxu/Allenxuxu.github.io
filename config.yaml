@@ -1,0 +1,57 @@
+baseURL: 'https://mogutou.xyz/'
+languageCode: en-us
+title: 徐旭 的博客
+theme: PaperMod
+paginate: 10
+
+enableInlineShortcodes: true
+enableRobotsTXT: true
+buildDrafts: false
+buildFuture: false
+buildExpired: false
+enableEmoji: true
+
+menu:
+  main:
+    - name: Archive
+      url: archives/
+      weight: 5
+    - name: Search
+      url: search/
+      weight: 10
+    - name: Tags
+      url: tags/
+      weight: 15
+    - name: About Me
+      url: about/
+      weight: 20
+
+params:
+  env: production
+  description: ""
+  author: 徐旭
+
+  defaultTheme: auto
+  ShowShareButtons: true
+  ShowReadingTime: true
+  displayFullLangName: true
+  ShowPostNavLinks: true
+  ShowBreadCrumbs: true
+  ShowToc: true
+  comments: true
+
+  homeInfoParams:
+    Title: "时光很匆忙 留下一些痕迹"
+    Content: >
+      礼法岂是为吾辈而设
+  socialIcons:
+    - name: github
+      url: "https://github.com/Allenxuxu"
+    - name: RsS
+      url: "index.xml"
+
+outputs:
+  home:
+    - HTML
+    - RSS
+    - JSON # is necessary
