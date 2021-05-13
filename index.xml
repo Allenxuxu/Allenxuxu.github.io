@@ -1,4 +1,12 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>徐旭 的博客</title><link>https://mogutou.xyz/</link><description>Recent content on 徐旭 的博客</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><lastBuildDate>Sun, 02 May 2021 11:22:38 +0800</lastBuildDate><atom:link href="https://mogutou.xyz/index.xml" rel="self" type="application/rss+xml"/><item><title>Kafka 设计与理解</title><link>https://mogutou.xyz/posts/mq/kafka/</link><pubDate>Sun, 02 May 2021 11:22:38 +0800</pubDate><guid>https://mogutou.xyz/posts/mq/kafka/</guid><description>整体架构 图片来自 https://zhuanlan.zhihu.com/p/103249714
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>徐旭 的博客</title><link>https://mogutou.xyz/</link><description>Recent content on 徐旭 的博客</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><lastBuildDate>Wed, 12 May 2021 11:22:38 +0800</lastBuildDate><atom:link href="https://mogutou.xyz/index.xml" rel="self" type="application/rss+xml"/><item><title>Go mod 小结</title><link>https://mogutou.xyz/posts/go/gomod/</link><pubDate>Wed, 12 May 2021 11:22:38 +0800</pubDate><guid>https://mogutou.xyz/posts/go/gomod/</guid><description>go.mod 文件 module example.com/foobar go 1.13 require ( example.com/apple v0.1.2 example.com/banana v1.2.3 example.com/banana/v2 v2.3.4 example.com/pineapple v0.0.0-20190924185754-1b0db40df49a ) exclude example.com/banana v1.2.4 replace example.com/apple v0.1.2 =&amp;gt; example.com/rda v0.1.0 replace example.com/banana =&amp;gt; example.com/hugebanana module：用于定义当前项目的模块路径。
+go：用于设置预期的 Go 版本。
+require：用于设置一个特定的模块版本。
+exclude：用于从使用中排除一个特定的模块版本。
+replace：用于将一个模块版本替换为另外一个模块版本。
+版本表示方式 基于某一个commit的伪版本号
+基本版本前缀-commit的UTC时间-commit的hash前12位 vX.0.0-yyyymmddhhmmss-abcdefabcdef vX.Y.Z-pre.0.yyyymmddhhmmss-abcdefabcdef
+vX.Y.(Z+1)-0.yyyymmddhhmmss-abcdefabcdef
+需要注意的是，同一个仓库的 v2.x.x 和之前小于 v2 大版本的代码被认为是两个不同的仓库。</description></item><item><title>Kafka 设计与理解</title><link>https://mogutou.xyz/posts/mq/kafka/</link><pubDate>Sun, 02 May 2021 11:22:38 +0800</pubDate><guid>https://mogutou.xyz/posts/mq/kafka/</guid><description>整体架构 图片来自 https://zhuanlan.zhihu.com/p/103249714
 Producer 负责发布消息到Kafka broker。Producer发送消息到broker时，会根据分区策略选择将其存储到哪一个Partition。
 常规的有轮询，随机等策略，主要是为了将消息均衡的发送到各个 partition，提高并行度，从而提高吞吐。常用的还有按 key 哈希，主要是为了实现业务 partition 有序的需求。
 Consumer 消息消费者，从Kafka broker读取消息的客户端。
