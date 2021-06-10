@@ -4,13 +4,12 @@
 先修改 .git/config 或者 修改全局的，修改成你需要的邮箱信息。
 [user] email = name@qq.com name = yourname git log 找到要修改的那一条 commit，复制要修改的commit 的前一条 commit 的哈希值。
 git rebase -i {{刚刚复制的哈希值}}
-然后后会出现一个 vim 打开的文本，将需要修改的 commit 信息前面的 pick 文本改成 edit，保存退出。
+# 或者最近 3 条 $ git rebase -i HEAD~3 然后后会出现一个 vim 打开的文本，将需要修改的 commit 信息前面的 pick 文本改成 edit，保存退出。
 修改邮箱信息
 git commit --amend --author="name &lt;name@qq.com>" --no-edit
-这时候查看 git log 信息，发现邮箱已经更改了。
-强制 push 到远程（注意风险）
-git push -f origin HEAD:master
-done！</p></section><footer class=entry-footer>September 10, 2020&nbsp;·&nbsp;1 min&nbsp;·&nbsp;徐旭</footer><a class=entry-link aria-label="post link to git 修改已经 commit 的邮箱信息" href=https://mogutou.xyz/posts/practice/git-amend/></a></article></main><footer class=footer><span>&copy; 2021 <a href=https://mogutou.xyz/>徐旭 的博客</a></span>
+然后 git rebase --continue
+中间也可跳过或退出 rebase 模式git rebase --skip git rebase --abort
+循环执行上面两步，当输出 Successfully rebased and updated refs/heads/master. 修改完成。...</p></section><footer class=entry-footer>September 10, 2020&nbsp;·&nbsp;1 min&nbsp;·&nbsp;徐旭</footer><a class=entry-link aria-label="post link to git 修改已经 commit 的邮箱信息" href=https://mogutou.xyz/posts/practice/git-amend/></a></article></main><footer class=footer><span>&copy; 2021 <a href=https://mogutou.xyz/>徐旭 的博客</a></span>
 <span>&#183;</span>
 <span>Powered by <a href=https://gohugo.io/ rel="noopener noreferrer" target=_blank>Hugo</a></span>
 <span>&#183;</span>
