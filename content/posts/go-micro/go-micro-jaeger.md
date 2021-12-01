@@ -127,7 +127,7 @@ func NewHandlerWrapper(ot opentracing.Tracer) server.HandlerWrapper {
 
 > lib/wrapper/tracer/opentracing/stdhttp/stdhttp.go
 
-和实现[JWT鉴权](https://blog.mogutou.xyz/blog/post/xuxu/0919e470cd5d)插件一样，实现一个HTTP中间件通过mciro的插件机制全局注册就可以实现拦截每次请求并处理。
+和实现[JWT鉴权](/posts/go-micro/go-micro-gateway-jwt/)插件一样，实现一个HTTP中间件通过mciro的插件机制全局注册就可以实现拦截每次请求并处理。
 
 ```
 // TracerWrapper tracer wrapper

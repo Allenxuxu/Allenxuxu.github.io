@@ -657,7 +657,7 @@ func loopAccept(s *server, l *loop, fd int) error {
 
 第一步，先遍历所有的 listener 看看当前 epoll 中就绪的 fd 是哪一个 listener ，然后执行客户端的负载策略，决定新的客户端连接放在哪一个事件循环中。
 
-这里关于客户端的负载策略，evio 利用了 epoll 的惊群效果，所有的事件循环都会唤醒进入loopAccept，不符合负载策略直接 return nil。 关于这边的更多细节，可以看我的另一篇文章 [【Golang 网络库 evio 一些问题/bug和思考】](https://note.mogutou.xyz/articles/2019/08/15/1565876205121.html)。
+这里关于客户端的负载策略，evio 利用了 epoll 的惊群效果，所有的事件循环都会唤醒进入loopAccept，不符合负载策略直接 return nil。 关于这边的更多细节，可以看我的另一篇文章 [【Golang 网络库 evio 一些问题/bug和思考】](/posts/open-source/evio-code-bug/)。
 
 接下来就是常规操作了，` syscall.Accept(fd)` 接受连接，然后 ` syscall.SetNonblock(nfd, true)` 设置成非阻塞模式，`	l.poll.AddReadWrite(c.fd)` 最后加入事件循环，注册可读可写事件。
 
