@@ -80,7 +80,7 @@ func NewHandlerWrapper(ot opentracing.Tracer) server.HandlerWrapper {
 		}
 	}
 }
-</code></pre><h3 id=micro-api网关插件>micro API网关插件<a hidden class=anchor aria-hidden=true href=#micro-api网关插件>#</a></h3><blockquote><p>lib/wrapper/tracer/opentracing/stdhttp/stdhttp.go</p></blockquote><p>和实现<a href=https://blog.mogutou.xyz/blog/post/xuxu/0919e470cd5d>JWT鉴权</a>插件一样，实现一个HTTP中间件通过mciro的插件机制全局注册就可以实现拦截每次请求并处理。</p><pre><code>// TracerWrapper tracer wrapper
+</code></pre><h3 id=micro-api网关插件>micro API网关插件<a hidden class=anchor aria-hidden=true href=#micro-api网关插件>#</a></h3><blockquote><p>lib/wrapper/tracer/opentracing/stdhttp/stdhttp.go</p></blockquote><p>和实现<a href=/posts/go-micro/go-micro-gateway-jwt/>JWT鉴权</a>插件一样，实现一个HTTP中间件通过mciro的插件机制全局注册就可以实现拦截每次请求并处理。</p><pre><code>// TracerWrapper tracer wrapper
 func TracerWrapper(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		spanCtx, _ := opentracing.GlobalTracer().Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(r.Header))
