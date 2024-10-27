@@ -1,6 +1,6 @@
 baseURL: 'https://blog.iofree.xyz/'
 languageCode: en-us
-title: 徐旭 的博客
+title: 顾惜朝 的博客
 theme: PaperMod
 paginate: 10
 
@@ -29,7 +29,7 @@ menu:
 params:
   env: production
   description: ""
-  author: 徐旭
+  author: 顾惜朝
 
   defaultTheme: auto
   ShowShareButtons: true
