@@ -1,24 +1,775 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Go-Micro on 徐旭 的博客</title><link>https://blog.iofree.xyz/tags/go-micro/</link><description>Recent content in Go-Micro on 徐旭 的博客</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><lastBuildDate>Sat, 28 Mar 2020 11:22:38 +0800</lastBuildDate><atom:link href="https://blog.iofree.xyz/tags/go-micro/index.xml" rel="self" type="application/rss+xml"/><item><title>go-micro 动态加载插件源码分析</title><link>https://blog.iofree.xyz/posts/go-micro/go-micro-plugin/</link><pubDate>Sat, 28 Mar 2020 11:22:38 +0800</pubDate><guid>https://blog.iofree.xyz/posts/go-micro/go-micro-plugin/</guid><description>go-micro 框架支持动态加载插件，无需修改代码。
-源码分析 启动服务前，设定 MICRO_PLUGIN 环境变量指定动态库 .so 文件路径，支持多个插件，逗号分割。程序启动前会读取 MICRO_PLUGIN 环境变量，并完成插件设定。
-下面是其内部实现：
-go-micro/service.go
-func (s *service) Init(opts ...Option) { ... // setup the plugins for _, p := range strings.Split(os.Getenv(&amp;quot;MICRO_PLUGIN&amp;quot;), &amp;quot;,&amp;quot;) { if len(p) == 0 { continue } // 加载 .so 文件 c, err := plugin.Load(p) if err != nil { logger.Fatal(err) } // go-micro 初始化插件 if err := plugin.Init(c); err != nil { logger.Fatal(err) } } 从上面的代码可以看出，service 初始化化的时候，读取 MICRO_PLUGIN 环境变量中指定的 .</description></item><item><title>Go Micro hystrix 熔断</title><link>https://blog.iofree.xyz/posts/go-micro/go-micro-hystrix/</link><pubDate>Thu, 27 Jun 2019 11:22:38 +0800</pubDate><guid>https://blog.iofree.xyz/posts/go-micro/go-micro-hystrix/</guid><description>hystrix-go hystrix是Netflix开源的一个JAVA项目，不过GitHub也有golang的实现版本hystrix-go
-hystrix-dashboard hystrix并没有自带一个仪表盘，无法直观的查看接口的健康状况。所以，我们采用GitHub的一个开源实现hystrix-dashboard。
-docker run --name hystrix-dashboard -d -p 8081:9002 mlabouardy/hystrix-dashboard:latest micro API网关插件 关于hystrix的工作原理，可以查阅相关资料，这里只讲解如何封装插件在micro API网关中使用。
-err := hystrix.Do(&amp;quot;my_command&amp;quot;, func() error { // talk to other services return nil }, nil) 使用hystrix.Do() 同步API，第一个参数是command, 应该是与当前请求一一对应的一个名称，如入“GET-/test”。第二个参数传入一个函数，函数包含我我们自己的错误逻辑，当请求失败时应该返回error。hystrix会根据我们的失败率执行熔断策略。
-封装Handler // BreakerWrapper hystrix breaker func BreakerWrapper(h http.Handler) http.Handler { return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { name := r.Method + &amp;quot;-&amp;quot; + r.RequestURI log.Println(name) err := hystrix.Do(name, func() error { sct := &amp;amp;status_code.StatusCodeTracker{ResponseWriter: w, Status: http.StatusOK} h.</description></item><item><title>Go Micro 服务健康检查</title><link>https://blog.iofree.xyz/posts/go-micro/go-micro-ttl/</link><pubDate>Thu, 27 Jun 2019 11:22:38 +0800</pubDate><guid>https://blog.iofree.xyz/posts/go-micro/go-micro-ttl/</guid><description>服务健康检查 在微服务架构中，每个服务都会存在多个实例，可能部署在不同的主机中。因为网络或者主机等不确定因素，每个服务都可能会出现故障。我们需要能够监控每个服务实例的健康状态，当一个服务故障时，及时将它从注册中心删除。
-实现 micro提供两个方法可以直接实现健康检查功能
-micro.RegisterTTL(time.Second*30), micro.RegisterInterval(time.Second*20), Interval就是间隔多久服务会重新注册 TTL就是注册服务的过期时间，如果服务挂了，超过过期时间后，注册中心也会将服务删除
-micro内部服务注册的流程 当我们执行service.Run() 时内部会执行Start() 在Start函数中又会执行s.opts.Server.Start()，方法的实现在go-micro/server/rpc_server.go中。 我们跳转到内部server的Start方法 可以发现micro使用一个定时器按照间隔时间去自动重新注册。当服务意外故障，无法向注册中心重新注册时，如果超过了设定的TTL时间，注册中心就会将服务删除。
-修改源码 service := grpc.NewService( micro.Name(&amp;quot;go.micro.srv.hello&amp;quot;), micro.WrapHandler(ocplugin.NewHandlerWrapper(t)), + micro.RegisterTTL(time.Second*15), + micro.RegisterInterval(time.Second*10), // micro.Version(&amp;quot;latest&amp;quot;), ) service := web.NewService( web.Name(name), web.Version(&amp;quot;lastest&amp;quot;), + web.RegisterTTL(time.Second*15), + web.RegisterInterval(time.Second*10), web.MicroService(grpc.NewService()), )</description></item><item><title>Go Micro API网管增加 JWT 鉴权</title><link>https://blog.iofree.xyz/posts/go-micro/go-micro-gateway-jwt/</link><pubDate>Mon, 24 Jun 2019 11:22:38 +0800</pubDate><guid>https://blog.iofree.xyz/posts/go-micro/go-micro-gateway-jwt/</guid><description>micro API网关 micro API网关是基于go-micro开发的，具有服务发现，负载均衡和RPC通信的能力。
-业界普遍做法是将鉴权，限流，熔断等功能也纳入API网关。micro API网关本身是可插拔的，可以通过新增插件的方式加入其他功能。
-JWT (JSON Web Token) JWT是是微服务中常用的授权技术，关于JWT的技术原理可以参考阮一峰的博文
-JWT库封装 lib/token 目录下封装了JWT的库。有一点特殊的是，库中利用consul的KV存储和micro的go-config库实现了动态更新JWT的PrivateKey功能，实际生产中还是应该使用拥有发布和权限管理的配置中心。 go-config 是micro作者实现的一个可动态加载、可插拔的配置库，可以从多种格式文件或者远程服务获取配置。详情可以参考文档中文文档|英文文档 PrivateKey是JWT在编解码时使用的私钥，一旦泄漏，客户端便可以利用这个私钥篡改、伪造Token。所以一般生产环境中都必须具备动态更新私钥的能力，一旦发现泄漏可以立即更改，或者定期更换私钥，提高安全性。 // InitConfig 初始化 func (srv *Token) InitConfig(address string, path ...string) { consulSource := consul.NewSource( consul.WithAddress(address), ) srv.conf = config.NewConfig() err := srv.conf.Load(consulSource) if err != nil { log.Fatal(err) } value := srv.conf.Get(path...).Bytes() if err != nil { log.Fatal(err) } srv.put(value) log.Println(&amp;quot;JWT privateKey:&amp;quot;, string(srv.get())) srv.enableAutoUpdate(path...) } func (srv *Token) enableAutoUpdate(path .</description></item><item><title>Go Micro jaeger 分布式链路追踪</title><link>https://blog.iofree.xyz/posts/go-micro/go-micro-jaeger/</link><pubDate>Mon, 24 Jun 2019 11:22:38 +0800</pubDate><guid>https://blog.iofree.xyz/posts/go-micro/go-micro-jaeger/</guid><description>安装jaeger jaeger提供一个all in one 的docker镜像，可以快速搭建实验环境
-docker run -d --name jaeger -e COLLECTOR_ZIPKIN_HTTP_PORT=9411 -p 5775:5775/udp -p 6831:6831/udp -p 6832:6832/udp -p 5778:5778 -p 16686:16686 -p 14268:14268 -p 9411:9411 jaegertracing/all-in-one:1.6 OpenTracing OpenTracing通过提供平台无关、厂商无关的API，使得开发人员能够方便的添加（或更换）追踪系统的实现。 OpenTracing提供了用于运营支撑系统的和针对特定平台的辅助程序库。 jaeger兼容OpenTracing API，所以我们使用OpenTracing的程序库可以方便的替换追踪工具。 OpenTracing中文文档
-jaeger使用 封住一下jaeger的初始化操作方便使用，详细用法可以查看 jaeger-client-go
-// lib/tracer // NewTracer 创建一个jaeger Tracer func NewTracer(servicename string, addr string) (opentracing.Tracer, io.Closer, error) { cfg := jaegercfg.Configuration{ ServiceName: servicename, Sampler: &amp;amp;jaegercfg.SamplerConfig{ Type: jaeger.SamplerTypeConst, Param: 1, }, Reporter: &amp;amp;jaegercfg.ReporterConfig{ LogSpans: true, BufferFlushInterval: 1 * time.</description></item><item><title>Go Micro 重试机制</title><link>https://blog.iofree.xyz/posts/go-micro/go-micro-retry/</link><pubDate>Thu, 20 Jun 2019 11:22:38 +0800</pubDate><guid>https://blog.iofree.xyz/posts/go-micro/go-micro-retry/</guid><description>在分布式系统中，经常会有服务出现故障，所以良好的重试机制可以大大的提高系统的可用性。本文主要分析micro的客户端重试机制，以及实例演示。
-micro 重试实现 micro框架提供方法设置客户端重试的次数。
-Client.Init( client.Retries(3), ) 当client请求失败时，客户端会根据selector的策略选择下一个节点重试请求。这样当一个服务实例故障时，客户端可以自动调用另一个实例。
-我们来看看micro 客户端内部重试的实现：
-go-micro\client\rpc_client.go
-func (r *rpcClient) Call(ctx context.Context, request Request, response interface{}, opts ...CallOption) error { ... //客户端call 调用函数， 在下面的循环中调用 call := func(i int) error { // call backoff first. Someone may want an initial start delay t, err := callOpts.Backoff(ctx, request, i) if err != nil { return errors.InternalServerError(&amp;quot;go.micro.client&amp;quot;, &amp;quot;backoff error: %v&amp;quot;, err.Error()) } // only sleep if greater than 0 if t.</description></item></channel></rss>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Go-Micro on 顾惜朝 的博客</title><link>https://blog.iofree.xyz/tags/go-micro/</link><description>Recent content in Go-Micro on 顾惜朝 的博客</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><lastBuildDate>Sat, 28 Mar 2020 11:22:38 +0800</lastBuildDate><atom:link href="https://blog.iofree.xyz/tags/go-micro/index.xml" rel="self" type="application/rss+xml"/><item><title>go-micro 动态加载插件源码分析</title><link>https://blog.iofree.xyz/posts/go-micro/go-micro-plugin/</link><pubDate>Sat, 28 Mar 2020 11:22:38 +0800</pubDate><guid>https://blog.iofree.xyz/posts/go-micro/go-micro-plugin/</guid><description>&amp;lt;p&amp;gt;go-micro 框架支持动态加载插件，无需修改代码。&amp;lt;/p&amp;gt;
+&amp;lt;h2 id=&amp;#34;源码分析&amp;#34;&amp;gt;源码分析&amp;lt;/h2&amp;gt;
+&amp;lt;p&amp;gt;启动服务前，设定 &amp;lt;code&amp;gt;MICRO_PLUGIN&amp;lt;/code&amp;gt; 环境变量指定动态库 .so 文件路径，支持多个插件，逗号分割。程序启动前会读取 &amp;lt;code&amp;gt;MICRO_PLUGIN&amp;lt;/code&amp;gt; 环境变量，并完成插件设定。&amp;lt;/p&amp;gt;
+&amp;lt;p&amp;gt;下面是其内部实现：&amp;lt;/p&amp;gt;
+&amp;lt;blockquote&amp;gt;
+&amp;lt;p&amp;gt;go-micro/service.go&amp;lt;/p&amp;gt;
+&amp;lt;/blockquote&amp;gt;
+&amp;lt;pre&amp;gt;&amp;lt;code&amp;gt;func (s *service) Init(opts ...Option) {
+...
+// setup the plugins
+for _, p := range strings.Split(os.Getenv(&amp;amp;quot;MICRO_PLUGIN&amp;amp;quot;), &amp;amp;quot;,&amp;amp;quot;) {
+if len(p) == 0 {
+continue
+}
+// 加载 .so 文件
+c, err := plugin.Load(p)
+if err != nil {
+logger.Fatal(err)
+}
+// go-micro 初始化插件
+if err := plugin.Init(c); err != nil {
+logger.Fatal(err)
+}
+}
+&amp;lt;/code&amp;gt;&amp;lt;/pre&amp;gt;&amp;lt;p&amp;gt;从上面的代码可以看出，service 初始化化的时候，读取 &amp;lt;code&amp;gt;MICRO_PLUGIN&amp;lt;/code&amp;gt; 环境变量中指定的 .so 文件路径。并且调用 &amp;lt;code&amp;gt;plugin&amp;lt;/code&amp;gt; 包，逐个 &amp;lt;code&amp;gt;Init&amp;lt;/code&amp;gt; 。&amp;lt;/p&amp;gt;
+&amp;lt;p&amp;gt;下面我们看下 &amp;lt;code&amp;gt;plugin&amp;lt;/code&amp;gt; 包的实现：&amp;lt;/p&amp;gt;
+&amp;lt;pre&amp;gt;&amp;lt;code&amp;gt;plugin
+├── default.go
+├── plugin.go
+└── template.go
+0 directories, 3 files
+&amp;lt;/code&amp;gt;&amp;lt;/pre&amp;gt;&amp;lt;p&amp;gt;plugin 包的实现非常简单，只有三个文件。&amp;lt;/p&amp;gt;
+&amp;lt;blockquote&amp;gt;
+&amp;lt;p&amp;gt;go-micro/plugin/plugin.go&amp;lt;/p&amp;gt;
+&amp;lt;/blockquote&amp;gt;
+&amp;lt;pre&amp;gt;&amp;lt;code&amp;gt;// Plugin is a plugin loaded from a file
+type Plugin interface {
+// Initialise a plugin with the config
+Init(c *Config) error
+// Load loads a .so plugin at the given path
+Load(path string) (*Config, error)
+// Build a .so plugin with config at the path specified
+Build(path string, c *Config) error
+}
+&amp;lt;/code&amp;gt;&amp;lt;/pre&amp;gt;&amp;lt;p&amp;gt;plugin 包定义了这样一个接口&amp;lt;/p&amp;gt;
+&amp;lt;ul&amp;gt;
+&amp;lt;li&amp;gt;&amp;lt;code&amp;gt;Init(c *Config) error&amp;lt;/code&amp;gt; 方法用来注册插件；&amp;lt;/li&amp;gt;
+&amp;lt;li&amp;gt;&amp;lt;code&amp;gt;Load(path string) (*Config, error)&amp;lt;/code&amp;gt; 用来加载一个 .so 文件，并返回一个 Config ；&amp;lt;/li&amp;gt;
+&amp;lt;li&amp;gt;&amp;lt;code&amp;gt;Build(path string, c *Config) error&amp;lt;/code&amp;gt; 用来根据指定的 Config 变量生成一个 .so 文件。&amp;lt;/li&amp;gt;
+&amp;lt;/ul&amp;gt;
+&amp;lt;p&amp;gt;go-micro 提供了一个默认的实现，在 go-micro/plugin/default.go 。&amp;lt;/p&amp;gt;
+&amp;lt;p&amp;gt;先来看一下默认实现的 Load 方法：&amp;lt;/p&amp;gt;
+&amp;lt;pre&amp;gt;&amp;lt;code&amp;gt;import (
+//...
+pg &amp;amp;quot;plugin&amp;amp;quot;
+//...
+)
+// Load loads a plugin created with `go build -buildmode=plugin`
+func (p *plugin) Load(path string) (*Config, error) {
+// 调用标准库打开 .so 文件
+plugin, err := pg.Open(path)
+if err != nil {
+return nil, err
+}
+// 在加载成功的动态库文件中寻找 Plugin 变量/函数
+s, err := plugin.Lookup(&amp;amp;quot;Plugin&amp;amp;quot;)
+if err != nil {
+return nil, err
+}
+// 类型转换成 go-micro 定义的 Config 类型指针
+pl, ok := s.(*Config)
+if !ok {
+return nil, errors.New(&amp;amp;quot;could not cast Plugin object&amp;amp;quot;)
+}
+return pl, nil
+}
+&amp;lt;/code&amp;gt;&amp;lt;/pre&amp;gt;&amp;lt;p&amp;gt;Load 方法主要就是调用标准库 &amp;lt;code&amp;gt;plugin&amp;lt;/code&amp;gt; open 一个 .so 文件，然后寻找 &amp;lt;code&amp;gt;Plugin&amp;lt;/code&amp;gt; 这个变量，并通过类型断言它转换成 &amp;lt;code&amp;gt;*Config&amp;lt;/code&amp;gt; 。Config 是 go-micro 定义的一个类型：&amp;lt;/p&amp;gt;
+&amp;lt;pre&amp;gt;&amp;lt;code&amp;gt;// Config is the plugin config
+type Config struct {
+// Name of the plugin e.g rabbitmq
+Name string
+// Type of the plugin e.g broker
+Type string
+// Path specifies the import path
+Path string
+// NewFunc creates an instance of the plugin
+NewFunc interface{}
+}
+&amp;lt;/code&amp;gt;&amp;lt;/pre&amp;gt;&amp;lt;p&amp;gt;关于标准库 &amp;lt;code&amp;gt;plugin&amp;lt;/code&amp;gt; 的用法，这里不再描述可以查看源码文件，里面有用法说明。需要特别说明的一点是，标准库 &amp;lt;code&amp;gt;plugin&amp;lt;/code&amp;gt; 的 Lookup 方法返回 &amp;lt;code&amp;gt;Symbol&amp;lt;/code&amp;gt; 类型，它可以类型转换成一个函数或者指向变量的指针。&amp;lt;/p&amp;gt;
+&amp;lt;p&amp;gt;我们继续看 go-micro 的 &amp;lt;code&amp;gt;Init&amp;lt;/code&amp;gt; 方法实现：&amp;lt;/p&amp;gt;
+&amp;lt;pre&amp;gt;&amp;lt;code&amp;gt;// Init sets up the plugin
+func (p *plugin) Init(c *Config) error {
+switch c.Type {
+case &amp;amp;quot;broker&amp;amp;quot;:
+pg, ok := c.NewFunc.(func(...broker.Option) broker.Broker)
+if !ok {
+return fmt.Errorf(&amp;amp;quot;Invalid plugin %s&amp;amp;quot;, c.Name)
+}
+cmd.DefaultBrokers[c.Name] = pg
+case &amp;amp;quot;client&amp;amp;quot;:
+pg, ok := c.NewFunc.(func(...client.Option) client.Client)
+if !ok {
+return fmt.Errorf(&amp;amp;quot;Invalid plugin %s&amp;amp;quot;, c.Name)
+}
+cmd.DefaultClients[c.Name] = pg
+case &amp;amp;quot;registry&amp;amp;quot;:
+pg, ok := c.NewFunc.(func(...registry.Option) registry.Registry)
+if !ok {
+return fmt.Errorf(&amp;amp;quot;Invalid plugin %s&amp;amp;quot;, c.Name)
+}
+cmd.DefaultRegistries[c.Name] = pg
+// .... 省略一些 case
+default:
+return fmt.Errorf(&amp;amp;quot;Unknown plugin type: %s for %s&amp;amp;quot;, c.Type, c.Name)
+}
+return nil
+}
+&amp;lt;/code&amp;gt;&amp;lt;/pre&amp;gt;&amp;lt;p&amp;gt;这个函数是 micro 实现动态加载的重点，&amp;lt;code&amp;gt;Init&amp;lt;/code&amp;gt; 函数通过 &amp;lt;code&amp;gt;Load&amp;lt;/code&amp;gt; 方法返回的 &amp;lt;code&amp;gt;Config&amp;lt;/code&amp;gt; 变量进行选择，然后通过类型转换得到 对应的构建函数赋值给 go-micro 的 &amp;lt;code&amp;gt;cmd&amp;lt;/code&amp;gt; 包里的全局变量 &amp;lt;code&amp;gt;DefaultXXXs&amp;lt;/code&amp;gt; 。&amp;lt;/p&amp;gt;
+&amp;lt;blockquote&amp;gt;
+&amp;lt;p&amp;gt;go-micro/config/cmd/cmd.go&amp;lt;/p&amp;gt;
+&amp;lt;/blockquote&amp;gt;
+&amp;lt;pre&amp;gt;&amp;lt;code&amp;gt; DefaultBrokers = map[string]func(...broker.Option) broker.Broker{
+&amp;amp;quot;service&amp;amp;quot;: brokerSrv.NewBroker,
+&amp;amp;quot;memory&amp;amp;quot;: memory.NewBroker,
+&amp;amp;quot;nats&amp;amp;quot;: nats.NewBroker,
+}
+DefaultClients = map[string]func(...client.Option) client.Client{
+&amp;amp;quot;mucp&amp;amp;quot;: cmucp.NewClient,
+&amp;amp;quot;grpc&amp;amp;quot;: cgrpc.NewClient,
+}
+&amp;lt;/code&amp;gt;&amp;lt;/pre&amp;gt;&amp;lt;p&amp;gt;以 &amp;lt;code&amp;gt;DefaultClients&amp;lt;/code&amp;gt; 为例，假设我们实现了一个 &amp;lt;code&amp;gt;client&amp;lt;/code&amp;gt; 插件(需要实现 go-micro 的 client.Client 接口) 并实现了自己的创建函数 &amp;lt;code&amp;gt;xrpc.NewClient&amp;lt;/code&amp;gt; 。那加载插件成功后， &amp;lt;code&amp;gt;DefaultClients&amp;lt;/code&amp;gt; 变量就是&amp;lt;/p&amp;gt;
+&amp;lt;pre&amp;gt;&amp;lt;code&amp;gt;map[string]func(...client.Option) client.Client{
+&amp;amp;quot;mucp&amp;amp;quot;: cmucp.NewClient,
+&amp;amp;quot;grpc&amp;amp;quot;: cgrpc.NewClient,
+&amp;amp;quot;xrpc&amp;amp;quot;: xrpc.NewClient,
+}
+&amp;lt;/code&amp;gt;&amp;lt;/pre&amp;gt;&amp;lt;p&amp;gt;在 cmd 对象的 Before 方法中会根据程序启动时传入的参数来选择对应的插件。&amp;lt;/p&amp;gt;
+&amp;lt;blockquote&amp;gt;
+&amp;lt;p&amp;gt;go-micro/config/cmd/cmd.go&amp;lt;/p&amp;gt;
+&amp;lt;/blockquote&amp;gt;
+&amp;lt;pre&amp;gt;&amp;lt;code&amp;gt;// Set the client
+if name := ctx.String(&amp;amp;quot;client&amp;amp;quot;); len(name) &amp;amp;gt; 0 {
+// only change if we have the client and type differs
+if cl, ok := c.opts.Clients[name]; ok &amp;amp;amp;&amp;amp;amp; (*c.opts.Client).String() != name {
+*c.opts.Client = cl()
+}
+}
+&amp;lt;/code&amp;gt;&amp;lt;/pre&amp;gt;&amp;lt;blockquote&amp;gt;
+&amp;lt;p&amp;gt;GLOBAL OPTIONS:
+&amp;amp;ndash;client value Client for go-micro; rpc [$MICRO_CLIENT]&amp;lt;/p&amp;gt;
+&amp;lt;/blockquote&amp;gt;
+&amp;lt;p&amp;gt;如果启动程序时设定了 client=xrpc ，必须记得设定 &amp;lt;code&amp;gt;MICRO_PLUGIN&amp;lt;/code&amp;gt; 环境变量指定动态库。这里设定的 &amp;lt;code&amp;gt;c.opts.Client&amp;lt;/code&amp;gt; 会被 micro 服务所使用，可以一步一步向上追溯，这里就不追踪了。&amp;lt;/p&amp;gt;
+&amp;lt;p&amp;gt;上面的源码分析中，我们没有看 go-micro &amp;lt;code&amp;gt;plugin&amp;lt;/code&amp;gt; 包的 &amp;lt;code&amp;gt;Build&amp;lt;/code&amp;gt; 方法默认实现，现在我们来看一下：&amp;lt;/p&amp;gt;
+&amp;lt;pre&amp;gt;&amp;lt;code&amp;gt;// Build generates a dso plugin using the go command `go build -buildmode=plugin`
+func (p *plugin) Build(path string, c *Config) error {
+path = strings.TrimSuffix(path, &amp;amp;quot;.so&amp;amp;quot;)
+// 在 tmp 目录创建一个临时go源码文件
+temp := os.TempDir()
+base := filepath.Base(path)
+goFile := filepath.Join(temp, base+&amp;amp;quot;.go&amp;amp;quot;)
+// 根据模版生成 go 代码到文件中
+if err := p.Generate(goFile, c); err != nil {
+return err
+}
+// defer 函数执行完成时候删除这个临时go源码文件
+defer os.Remove(goFile)
+if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil &amp;amp;amp;&amp;amp;amp; !os.IsExist(err) {
+return fmt.Errorf(&amp;amp;quot;Failed to create dir %s: %v&amp;amp;quot;, filepath.Dir(path), err)
+}
+// 将这个文件编译成动态库
+cmd := exec.Command(&amp;amp;quot;go&amp;amp;quot;, &amp;amp;quot;build&amp;amp;quot;, &amp;amp;quot;-buildmode=plugin&amp;amp;quot;, &amp;amp;quot;-o&amp;amp;quot;, path+&amp;amp;quot;.so&amp;amp;quot;, goFile)
+cmd.Stdout = os.Stdout
+cmd.Stderr = os.Stderr
+return cmd.Run()
+}
+&amp;lt;/code&amp;gt;&amp;lt;/pre&amp;gt;&amp;lt;p&amp;gt;可以看出，主要就是更具传入的文件路径，创建目录，创建一个临时的go文件，然后调用 &amp;lt;code&amp;gt;go build -buildmode=plugin&amp;lt;/code&amp;gt; 生成动态库。&amp;lt;/p&amp;gt;
+&amp;lt;p&amp;gt;这里调用的一个 &amp;lt;code&amp;gt;Generate&amp;lt;/code&amp;gt; 方法，这个方法通过 go 模版生成 go 文件。&amp;lt;/p&amp;gt;
+&amp;lt;div class=&amp;#34;highlight&amp;#34;&amp;gt;&amp;lt;pre style=&amp;#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&amp;#34;&amp;gt;&amp;lt;code class=&amp;#34;language-golang&amp;#34; data-lang=&amp;#34;golang&amp;#34;&amp;gt;&amp;lt;span style=&amp;#34;color:#75715e&amp;#34;&amp;gt;// Generate creates a go file at the specified path.
+&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#75715e&amp;#34;&amp;gt;// You must use `go build -buildmode=plugin`to build it.
+&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#75715e&amp;#34;&amp;gt;&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#66d9ef&amp;#34;&amp;gt;func&amp;lt;/span&amp;gt; (&amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;p&amp;lt;/span&amp;gt; &amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;*&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;plugin&amp;lt;/span&amp;gt;) &amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;Generate&amp;lt;/span&amp;gt;(&amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;path&amp;lt;/span&amp;gt; &amp;lt;span style=&amp;#34;color:#66d9ef&amp;#34;&amp;gt;string&amp;lt;/span&amp;gt;, &amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;c&amp;lt;/span&amp;gt; &amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;*&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;Config&amp;lt;/span&amp;gt;) &amp;lt;span style=&amp;#34;color:#66d9ef&amp;#34;&amp;gt;error&amp;lt;/span&amp;gt; {
+&amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;f&amp;lt;/span&amp;gt;, &amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;err&amp;lt;/span&amp;gt; &amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;:=&amp;lt;/span&amp;gt; &amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;os&amp;lt;/span&amp;gt;.&amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;Create&amp;lt;/span&amp;gt;(&amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;path&amp;lt;/span&amp;gt;)
+&amp;lt;span style=&amp;#34;color:#66d9ef&amp;#34;&amp;gt;if&amp;lt;/span&amp;gt; &amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;err&amp;lt;/span&amp;gt; &amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;!=&amp;lt;/span&amp;gt; &amp;lt;span style=&amp;#34;color:#66d9ef&amp;#34;&amp;gt;nil&amp;lt;/span&amp;gt; {
+&amp;lt;span style=&amp;#34;color:#66d9ef&amp;#34;&amp;gt;return&amp;lt;/span&amp;gt; &amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;err&amp;lt;/span&amp;gt;
+}
+&amp;lt;span style=&amp;#34;color:#66d9ef&amp;#34;&amp;gt;defer&amp;lt;/span&amp;gt; &amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;f&amp;lt;/span&amp;gt;.&amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;Close&amp;lt;/span&amp;gt;()
+&amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;t&amp;lt;/span&amp;gt;, &amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;err&amp;lt;/span&amp;gt; &amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;:=&amp;lt;/span&amp;gt; &amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;template&amp;lt;/span&amp;gt;.&amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;New&amp;lt;/span&amp;gt;(&amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;c&amp;lt;/span&amp;gt;.&amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;Name&amp;lt;/span&amp;gt;).&amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;Parse&amp;lt;/span&amp;gt;(&amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;tmpl&amp;lt;/span&amp;gt;)
+&amp;lt;span style=&amp;#34;color:#66d9ef&amp;#34;&amp;gt;if&amp;lt;/span&amp;gt; &amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;err&amp;lt;/span&amp;gt; &amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;!=&amp;lt;/span&amp;gt; &amp;lt;span style=&amp;#34;color:#66d9ef&amp;#34;&amp;gt;nil&amp;lt;/span&amp;gt; {
+&amp;lt;span style=&amp;#34;color:#66d9ef&amp;#34;&amp;gt;return&amp;lt;/span&amp;gt; &amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;err&amp;lt;/span&amp;gt;
+}
+&amp;lt;span style=&amp;#34;color:#66d9ef&amp;#34;&amp;gt;return&amp;lt;/span&amp;gt; &amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;t&amp;lt;/span&amp;gt;.&amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;Execute&amp;lt;/span&amp;gt;(&amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;f&amp;lt;/span&amp;gt;, &amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;c&amp;lt;/span&amp;gt;)
+}
+&amp;lt;span style=&amp;#34;color:#75715e&amp;#34;&amp;gt;// ...
+&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#75715e&amp;#34;&amp;gt;&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#66d9ef&amp;#34;&amp;gt;var&amp;lt;/span&amp;gt; (
+&amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;tmpl&amp;lt;/span&amp;gt; = &amp;lt;span style=&amp;#34;color:#e6db74&amp;#34;&amp;gt;`
+&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#e6db74&amp;#34;&amp;gt;package main
+&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#e6db74&amp;#34;&amp;gt;
+&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#e6db74&amp;#34;&amp;gt;import (
+&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#e6db74&amp;#34;&amp;gt; &amp;amp;#34;github.com/micro/go-micro/v2/plugin&amp;amp;#34;
+&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#e6db74&amp;#34;&amp;gt;
+&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#e6db74&amp;#34;&amp;gt; &amp;amp;#34;&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#75715e&amp;#34;&amp;gt;{{&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;.Path&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#75715e&amp;#34;&amp;gt;}}&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#e6db74&amp;#34;&amp;gt;&amp;amp;#34;
+&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#e6db74&amp;#34;&amp;gt;)
+&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#e6db74&amp;#34;&amp;gt;
+&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#e6db74&amp;#34;&amp;gt;var Plugin = plugin.Config{
+&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#e6db74&amp;#34;&amp;gt; Name: &amp;amp;#34;&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#75715e&amp;#34;&amp;gt;{{&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;.Name&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#75715e&amp;#34;&amp;gt;}}&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#e6db74&amp;#34;&amp;gt;&amp;amp;#34;,
+&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#e6db74&amp;#34;&amp;gt; Type: &amp;amp;#34;&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#75715e&amp;#34;&amp;gt;{{&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;.Type&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#75715e&amp;#34;&amp;gt;}}&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#e6db74&amp;#34;&amp;gt;&amp;amp;#34;,
+&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#e6db74&amp;#34;&amp;gt; Path: &amp;amp;#34;&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#75715e&amp;#34;&amp;gt;{{&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;.Path&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#75715e&amp;#34;&amp;gt;}}&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#e6db74&amp;#34;&amp;gt;&amp;amp;#34;,
+&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#e6db74&amp;#34;&amp;gt; NewFunc: &amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#75715e&amp;#34;&amp;gt;{{&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;.Name&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#75715e&amp;#34;&amp;gt;}}&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#e6db74&amp;#34;&amp;gt;.&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#75715e&amp;#34;&amp;gt;{{&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;.NewFunc&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#75715e&amp;#34;&amp;gt;}}&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#e6db74&amp;#34;&amp;gt;,
+&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#e6db74&amp;#34;&amp;gt;}
+&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#e6db74&amp;#34;&amp;gt;`&amp;lt;/span&amp;gt;
+)
+&amp;lt;/code&amp;gt;&amp;lt;/pre&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;p&amp;gt;根据模版生成 go 文件中会有一个全局变量 &amp;lt;code&amp;gt;Plugin&amp;lt;/code&amp;gt;，这也印证了 &amp;lt;code&amp;gt;Load&amp;lt;/code&amp;gt; 方法中的 &amp;lt;code&amp;gt;plugin.Lookup(&amp;amp;quot;Plugin&amp;amp;quot;)&amp;lt;/code&amp;gt; 。&amp;lt;/p&amp;gt;
+&amp;lt;h2 id=&amp;#34;简单使用&amp;#34;&amp;gt;简单使用&amp;lt;/h2&amp;gt;
+&amp;lt;pre&amp;gt;&amp;lt;code&amp;gt;package main
+import (
+&amp;amp;quot;fmt&amp;amp;quot;
+&amp;amp;quot;github.com/micro/go-micro/v2/plugin&amp;amp;quot;
+)
+func main() {
+p := plugin.NewPlugin()
+if err := p.Build(&amp;amp;quot;/tmp/test.so&amp;amp;quot;, &amp;amp;amp;plugin.Config{
+Name: &amp;amp;quot;client&amp;amp;quot;,
+Type: &amp;amp;quot;client&amp;amp;quot;,
+Path: &amp;amp;quot;github.com/micro/go-micro/v2/client&amp;amp;quot;,
+NewFunc: &amp;amp;quot;NewClient&amp;amp;quot;,
+}); err != nil {
+panic(err)
+}
+c, err := plugin.Load(&amp;amp;quot;/tmp/test.so&amp;amp;quot;)
+if err != nil {
+panic(err)
+}
+fmt.Println(c.Name, c.Type, c.Path, c.NewFunc)
+}
+&amp;lt;/code&amp;gt;&amp;lt;/pre&amp;gt;&amp;lt;p&amp;gt;上面的例子，主要是使用了 go-micro 的 plugin 包。先生成了 &amp;lt;code&amp;gt;/tmp/test.so&amp;lt;/code&amp;gt; ，然后在 &amp;lt;code&amp;gt;Load&amp;lt;/code&amp;gt; 这个动态库，打印 config 的内容。&amp;lt;/p&amp;gt;
+&amp;lt;p&amp;gt;当然也可以，不通过 plugin.Build 生成动态库，直接手写一个 go 文件，手动编译成动态库。&amp;lt;/p&amp;gt;
+&amp;lt;blockquote&amp;gt;
+&amp;lt;p&amp;gt;test.go&amp;lt;/p&amp;gt;
+&amp;lt;/blockquote&amp;gt;
+&amp;lt;pre&amp;gt;&amp;lt;code&amp;gt;package main
+import (
+&amp;amp;quot;github.com/micro/go-micro/v2/client&amp;amp;quot;
+&amp;amp;quot;github.com/micro/go-micro/v2/plugin&amp;amp;quot;
+)
+var Plugin = plugin.Config{
+Name: &amp;amp;quot;test&amp;amp;quot;,
+Type: &amp;amp;quot;client&amp;amp;quot;,
+Path: &amp;amp;quot;github.com/micro/go-micro/v2/client&amp;amp;quot;,
+NewFunc: client.NewClient,
+}
+&amp;lt;/code&amp;gt;&amp;lt;/pre&amp;gt;&amp;lt;pre&amp;gt;&amp;lt;code&amp;gt;go build -buildmode=plugin -o ./test.so test.go
+&amp;lt;/code&amp;gt;&amp;lt;/pre&amp;gt;&amp;lt;h2 id=&amp;#34;go-micro-动态加载的主要场景&amp;#34;&amp;gt;go-micro 动态加载的主要场景&amp;lt;/h2&amp;gt;
+&amp;lt;p&amp;gt;假设我们的 micro 服务 client 使用的是 grpc 的形式，现在希望改成 brpc 的形式。go-micro 支持的 client 插件中并不包含 brpc，我们自己使用 brpc 实现一个 client 插件，然后将其编译成动态库。&amp;lt;/p&amp;gt;
+&amp;lt;p&amp;gt;在运行环境 &amp;lt;code&amp;gt;MICRO_PLUGIN&amp;lt;/code&amp;gt; 变量指定动态库路径，并且修改程序的启动命令，指定 &amp;lt;code&amp;gt;client=brpc&amp;lt;/code&amp;gt; 。这样就可以做到无需重新编译二进制，替换自己想要的插件。&amp;lt;/p&amp;gt;
+&amp;lt;p&amp;gt;当然，自己在代码中重新 &amp;lt;code&amp;gt;import&amp;lt;/code&amp;gt; 自己实现的插件库，显示指定 client 也是可以的。这样还可以将变更纳入版本管理，也是极好的。&amp;lt;/p&amp;gt;</description></item><item><title>Go Micro hystrix 熔断</title><link>https://blog.iofree.xyz/posts/go-micro/go-micro-hystrix/</link><pubDate>Thu, 27 Jun 2019 11:22:38 +0800</pubDate><guid>https://blog.iofree.xyz/posts/go-micro/go-micro-hystrix/</guid><description>&amp;lt;h1 id=&amp;#34;hystrix-go&amp;#34;&amp;gt;hystrix-go&amp;lt;/h1&amp;gt;
+&amp;lt;p&amp;gt;hystrix是Netflix开源的一个JAVA项目，不过GitHub也有golang的实现版本&amp;lt;a href=&amp;#34;https://github.com/afex/hystrix-go&amp;#34;&amp;gt;hystrix-go&amp;lt;/a&amp;gt;&amp;lt;/p&amp;gt;
+&amp;lt;h1 id=&amp;#34;hystrix-dashboard&amp;#34;&amp;gt;hystrix-dashboard&amp;lt;/h1&amp;gt;
+&amp;lt;p&amp;gt;hystrix并没有自带一个仪表盘，无法直观的查看接口的健康状况。所以，我们采用GitHub的一个开源实现hystrix-dashboard。&amp;lt;/p&amp;gt;
+&amp;lt;pre&amp;gt;&amp;lt;code&amp;gt;docker run --name hystrix-dashboard -d -p 8081:9002 mlabouardy/hystrix-dashboard:latest
+&amp;lt;/code&amp;gt;&amp;lt;/pre&amp;gt;&amp;lt;h1 id=&amp;#34;micro-api网关插件&amp;#34;&amp;gt;micro API网关插件&amp;lt;/h1&amp;gt;
+&amp;lt;p&amp;gt;关于hystrix的工作原理，可以查阅相关资料，这里只讲解如何封装插件在micro API网关中使用。&amp;lt;/p&amp;gt;
+&amp;lt;pre&amp;gt;&amp;lt;code&amp;gt;err := hystrix.Do(&amp;amp;quot;my_command&amp;amp;quot;, func() error {
+// talk to other services
+return nil
+}, nil)
+&amp;lt;/code&amp;gt;&amp;lt;/pre&amp;gt;&amp;lt;p&amp;gt;使用hystrix.Do() 同步API，第一个参数是command, 应该是与当前请求一一对应的一个名称，如入“GET-/test”。第二个参数传入一个函数，函数包含我我们自己的错误逻辑，当请求失败时应该返回error。hystrix会根据我们的失败率执行熔断策略。&amp;lt;/p&amp;gt;
+&amp;lt;h2 id=&amp;#34;封装handler&amp;#34;&amp;gt;封装Handler&amp;lt;/h2&amp;gt;
+&amp;lt;pre&amp;gt;&amp;lt;code&amp;gt;// BreakerWrapper hystrix breaker
+func BreakerWrapper(h http.Handler) http.Handler {
+return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+name := r.Method + &amp;amp;quot;-&amp;amp;quot; + r.RequestURI
+log.Println(name)
+err := hystrix.Do(name, func() error {
+sct := &amp;amp;amp;status_code.StatusCodeTracker{ResponseWriter: w, Status: http.StatusOK}
+h.ServeHTTP(sct.WrappedResponseWriter(), r)
+if sct.Status &amp;amp;gt;= http.StatusBadRequest {
+str := fmt.Sprintf(&amp;amp;quot;status code %d&amp;amp;quot;, sct.Status)
+log.Println(str)
+return errors.New(str)
+}
+return nil
+}, nil)
+if err != nil {
+log.Println(&amp;amp;quot;hystrix breaker err: &amp;amp;quot;, err)
+return
+}
+})
+}
+...
+// 注册插件
+plugin.Register(plugin.NewPlugin(
+plugin.WithName(&amp;amp;quot;breaker&amp;amp;quot;),
+plugin.WithHandler(
+hystrix.BreakerWrapper,
+),
+))
+...
+&amp;lt;/code&amp;gt;&amp;lt;/pre&amp;gt;&amp;lt;p&amp;gt;在 hystrix.Do 中，首先执行 h.ServeHTTP，该函数返回后，即请求执行完成。我们判断HTTP状态码，如果大于StatusBadRequest，则认为这次请求失败，返回一个错误，hystrix会收集错误，如果错误率达到某个阀值，就会触发断路器。
+在做实验时，可以直接在main函数里设置hystrix的几个默认配置参数，方便看效果&amp;lt;/p&amp;gt;
+&amp;lt;pre&amp;gt;&amp;lt;code&amp;gt;// hystrix-go/hystrix/settings.go
+// DefaultTimeout is how long to wait for command to complete, in milliseconds
+DefaultTimeout = 1000
+// DefaultMaxConcurrent is how many commands of the same type can run at the same time
+DefaultMaxConcurrent = 10
+// DefaultVolumeThreshold is the minimum number of requests needed before a circuit can be tripped due to health
+DefaultVolumeThreshold = 20
+// DefaultSleepWindow is how long, in milliseconds, to wait after a circuit opens before testing for recovery
+DefaultSleepWindow = 5000
+// DefaultErrorPercentThreshold causes circuits to open once the rolling measure of errors exceeds this percent of requests
+DefaultErrorPercentThreshold = 50
+&amp;lt;/code&amp;gt;&amp;lt;/pre&amp;gt;&amp;lt;p&amp;gt;hystrix-go库还提供为每个commond动态设置配置的接口，我们可以通过这个接口结合配置中心，动态调节服务。&amp;lt;/p&amp;gt;
+&amp;lt;pre&amp;gt;&amp;lt;code&amp;gt;hystrix.ConfigureCommand(&amp;amp;quot;my_command&amp;amp;quot;, hystrix.CommandConfig{
+Timeout: 1000,
+MaxConcurrentRequests: 100,
+ErrorPercentThreshold: 25,
+})
+&amp;lt;/code&amp;gt;&amp;lt;/pre&amp;gt;&amp;lt;h1 id=&amp;#34;接入hystrix-dashboard&amp;#34;&amp;gt;接入hystrix-dashboard&amp;lt;/h1&amp;gt;
+&amp;lt;pre&amp;gt;&amp;lt;code&amp;gt;docker run --name hystrix-dashboard -d -p 8081:9002 mlabouardy/hystrix-dashboard:latest
+&amp;lt;/code&amp;gt;&amp;lt;/pre&amp;gt;
+&amp;lt;p&amp;gt;打开 http://localhost:8081/hystrix , 输入 http://{ip}:81/hystrix.stream , 此处ip为本机ip，因为hystrix-dashboard是容器启动的，无法直接访问本机127.0.0.1。&amp;lt;/p&amp;gt;
+&amp;lt;blockquote&amp;gt;
+&amp;lt;p&amp;gt;Enable dashboard metrics
+In your main.go, register the event stream HTTP handler on a port and launch it in a goroutine. Once you configure turbine for your Hystrix Dashboard to start streaming events, your commands will automatically begin appearing.&amp;lt;/p&amp;gt;
+&amp;lt;p&amp;gt;hystrixStreamHandler := hystrix.NewStreamHandler()
+hystrixStreamHandler.Start()
+go http.ListenAndServe(net.JoinHostPort(&amp;amp;quot;&amp;amp;quot;, &amp;amp;ldquo;81&amp;amp;rdquo;), hystrixStreamHandler)&amp;lt;/p&amp;gt;
+&amp;lt;/blockquote&amp;gt;
+&amp;lt;p&amp;gt;&amp;lt;img loading=&amp;#34;lazy&amp;#34; src=&amp;#34;https://cdn.jsdelivr.net/gh/Allenxuxu/blog/img/image-32b71ce3.png&amp;#34; alt=&amp;#34;image.png&amp;#34; /&amp;gt;
+&amp;lt;/p&amp;gt;</description></item><item><title>Go Micro 服务健康检查</title><link>https://blog.iofree.xyz/posts/go-micro/go-micro-ttl/</link><pubDate>Thu, 27 Jun 2019 11:22:38 +0800</pubDate><guid>https://blog.iofree.xyz/posts/go-micro/go-micro-ttl/</guid><description>&amp;lt;h1 id=&amp;#34;服务健康检查&amp;#34;&amp;gt;服务健康检查&amp;lt;/h1&amp;gt;
+&amp;lt;p&amp;gt;在微服务架构中，每个服务都会存在多个实例，可能部署在不同的主机中。因为网络或者主机等不确定因素，每个服务都可能会出现故障。我们需要能够监控每个服务实例的健康状态，当一个服务故障时，及时将它从注册中心删除。&amp;lt;/p&amp;gt;
+&amp;lt;h1 id=&amp;#34;实现&amp;#34;&amp;gt;实现&amp;lt;/h1&amp;gt;
+&amp;lt;p&amp;gt;micro提供两个方法可以直接实现健康检查功能&amp;lt;/p&amp;gt;
+&amp;lt;pre&amp;gt;&amp;lt;code&amp;gt;micro.RegisterTTL(time.Second*30),
+micro.RegisterInterval(time.Second*20),
+&amp;lt;/code&amp;gt;&amp;lt;/pre&amp;gt;&amp;lt;p&amp;gt;Interval就是间隔多久服务会重新注册
+TTL就是注册服务的过期时间，如果服务挂了，超过过期时间后，注册中心也会将服务删除&amp;lt;/p&amp;gt;
+&amp;lt;h2 id=&amp;#34;micro内部服务注册的流程&amp;#34;&amp;gt;micro内部服务注册的流程&amp;lt;/h2&amp;gt;
+&amp;lt;p&amp;gt;当我们执行service.Run() 时内部会执行Start()
+&amp;lt;img loading=&amp;#34;lazy&amp;#34; src=&amp;#34;https://cdn.jsdelivr.net/gh/Allenxuxu/blog/img/image-20210424112941936.png&amp;#34; alt=&amp;#34;image-20210424112941936&amp;#34; /&amp;gt;
+&amp;lt;/p&amp;gt;
+&amp;lt;p&amp;gt;在Start函数中又会执行s.opts.Server.Start()，方法的实现在go-micro/server/rpc_server.go中。
+我们跳转到内部server的Start方法
+&amp;lt;img loading=&amp;#34;lazy&amp;#34; src=&amp;#34;https://cdn.jsdelivr.net/gh/Allenxuxu/blog/img/image-20210424113002309.png&amp;#34; alt=&amp;#34;image-20210424113002309&amp;#34; /&amp;gt;
+&amp;lt;/p&amp;gt;
+&amp;lt;p&amp;gt;可以发现micro使用一个定时器按照间隔时间去自动重新注册。当服务意外故障，无法向注册中心重新注册时，如果超过了设定的TTL时间，注册中心就会将服务删除。&amp;lt;/p&amp;gt;
+&amp;lt;h2 id=&amp;#34;修改源码&amp;#34;&amp;gt;修改源码&amp;lt;/h2&amp;gt;
+&amp;lt;pre&amp;gt;&amp;lt;code&amp;gt; service := grpc.NewService(
+micro.Name(&amp;amp;quot;go.micro.srv.hello&amp;amp;quot;),
+micro.WrapHandler(ocplugin.NewHandlerWrapper(t)),
++ micro.RegisterTTL(time.Second*15),
++ micro.RegisterInterval(time.Second*10),
+// micro.Version(&amp;amp;quot;latest&amp;amp;quot;),
+)
+&amp;lt;/code&amp;gt;&amp;lt;/pre&amp;gt;&amp;lt;pre&amp;gt;&amp;lt;code&amp;gt;service := web.NewService(
+web.Name(name),
+web.Version(&amp;amp;quot;lastest&amp;amp;quot;),
++ web.RegisterTTL(time.Second*15),
++ web.RegisterInterval(time.Second*10),
+web.MicroService(grpc.NewService()),
+)
+&amp;lt;/code&amp;gt;&amp;lt;/pre&amp;gt;</description></item><item><title>Go Micro API网管增加 JWT 鉴权</title><link>https://blog.iofree.xyz/posts/go-micro/go-micro-gateway-jwt/</link><pubDate>Mon, 24 Jun 2019 11:22:38 +0800</pubDate><guid>https://blog.iofree.xyz/posts/go-micro/go-micro-gateway-jwt/</guid><description>&amp;lt;h1 id=&amp;#34;micro-api网关&amp;#34;&amp;gt;micro API网关&amp;lt;/h1&amp;gt;
+&amp;lt;p&amp;gt;micro API网关是基于go-micro开发的，具有服务发现，负载均衡和RPC通信的能力。&amp;lt;/p&amp;gt;
+&amp;lt;p&amp;gt;业界普遍做法是将鉴权，限流，熔断等功能也纳入API网关。micro API网关本身是可插拔的，可以通过新增插件的方式加入其他功能。&amp;lt;/p&amp;gt;
+&amp;lt;h1 id=&amp;#34;jwt-json-web-token&amp;#34;&amp;gt;JWT (JSON Web Token)&amp;lt;/h1&amp;gt;
+&amp;lt;p&amp;gt;JWT是是微服务中常用的授权技术，关于JWT的技术原理可以参考阮一峰的&amp;lt;a href=&amp;#34;http://www.ruanyifeng.com/blog/2018/07/json_web_token-tutorial.html&amp;#34;&amp;gt;博文&amp;lt;/a&amp;gt;&amp;lt;/p&amp;gt;
+&amp;lt;h1 id=&amp;#34;jwt库封装&amp;#34;&amp;gt;JWT库封装&amp;lt;/h1&amp;gt;
+&amp;lt;ul&amp;gt;
+&amp;lt;li&amp;gt;lib/token 目录下封装了JWT的库。有一点特殊的是，库中利用consul的KV存储和micro的go-config库实现了动态更新JWT的PrivateKey功能，实际生产中还是应该使用拥有发布和权限管理的配置中心。
+&amp;lt;ul&amp;gt;
+&amp;lt;li&amp;gt;go-config 是micro作者实现的一个可动态加载、可插拔的配置库，可以从多种格式文件或者远程服务获取配置。详情可以参考文档&amp;lt;a href=&amp;#34;https://micro.mu/docs/cn/go-config.html&amp;#34;&amp;gt;中文文档&amp;lt;/a&amp;gt;|&amp;lt;a href=&amp;#34;https://micro.mu/docs/go-config.html&amp;#34;&amp;gt;英文文档&amp;lt;/a&amp;gt;&amp;lt;/li&amp;gt;
+&amp;lt;li&amp;gt;PrivateKey是JWT在编解码时使用的私钥，一旦泄漏，客户端便可以利用这个私钥篡改、伪造Token。所以一般生产环境中都必须具备动态更新私钥的能力，一旦发现泄漏可以立即更改，或者定期更换私钥，提高安全性。&amp;lt;/li&amp;gt;
+&amp;lt;/ul&amp;gt;
+&amp;lt;/li&amp;gt;
+&amp;lt;/ul&amp;gt;
+&amp;lt;pre&amp;gt;&amp;lt;code&amp;gt;// InitConfig 初始化
+func (srv *Token) InitConfig(address string, path ...string) {
+consulSource := consul.NewSource(
+consul.WithAddress(address),
+)
+srv.conf = config.NewConfig()
+err := srv.conf.Load(consulSource)
+if err != nil {
+log.Fatal(err)
+}
+value := srv.conf.Get(path...).Bytes()
+if err != nil {
+log.Fatal(err)
+}
+srv.put(value)
+log.Println(&amp;amp;quot;JWT privateKey:&amp;amp;quot;, string(srv.get()))
+srv.enableAutoUpdate(path...)
+}
+func (srv *Token) enableAutoUpdate(path ...string) {
+go func() {
+for {
+w, err := srv.conf.Watch(path...)
+if err != nil {
+log.Println(err)
+}
+v, err := w.Next()
+if err != nil {
+log.Println(err)
+}
+value := v.Bytes()
+srv.put(value)
+log.Println(&amp;amp;quot;New JWT privateKey:&amp;amp;quot;, string(srv.get()))
+}
+}()
+}
+&amp;lt;/code&amp;gt;&amp;lt;/pre&amp;gt;&amp;lt;p&amp;gt;作者已经实现了consul的KV配置的插件，所以只需要导入这个库&amp;amp;quot;github.com/micro/go-config/source/consul&amp;amp;quot;，便可以直接读取consul中的配置。&amp;lt;/p&amp;gt;
+&amp;lt;p&amp;gt;动态跟新实现就是利用go-config的watch方法，当consul KV里的配置更改，Watch函数返回再通过Next方法读取新数据。将watch 读取的操作起一个协程循环执行（没有考虑优雅退出），通过读写锁来保证操作安全。&amp;lt;/p&amp;gt;
+&amp;lt;h1 id=&amp;#34;实现api网关插件&amp;#34;&amp;gt;实现API网关插件&amp;lt;/h1&amp;gt;
+&amp;lt;p&amp;gt;将JWT Token在HTTP头中携带，通过HTTP中间件过滤每一个HTTP请求，提取头中的Token鉴权，通过则继续执行，不通过就直接返回。&amp;lt;/p&amp;gt;
+&amp;lt;pre&amp;gt;&amp;lt;code&amp;gt;//microservices/lib/wrapper/auth
+// JWTAuthWrapper JWT鉴权Wrapper
+func JWTAuthWrapper(token *token.Token) plugin.Handler {
+return func(h http.Handler) http.Handler {
+return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+log.Println(&amp;amp;quot;auth plugin received: &amp;amp;quot; + r.URL.Path)
+// TODO 从配置中心动态获取白名单URL
+if r.URL.Path == &amp;amp;quot;/user/login&amp;amp;quot; || r.URL.Path == &amp;amp;quot;/user/register&amp;amp;quot;{
+h.ServeHTTP(w, r)
+return
+}
+tokenstr := r.Header.Get(&amp;amp;quot;Authorization&amp;amp;quot;)
+userFromToken, e := token.Decode(tokenstr)
+if e != nil {
+w.WriteHeader(http.StatusUnauthorized)
+return
+}
+log.Println(&amp;amp;quot;User Name : &amp;amp;quot;, userFromToken.UserName)
+r.Header.Set(&amp;amp;quot;X-Example-Username&amp;amp;quot;, userFromToken.UserName)
+h.ServeHTTP(w, r)
+})
+}
+}
+...
+// main.go
+func init() {
+token := &amp;amp;amp;token.Token{}
+token.InitConfig(&amp;amp;quot;127.0.0.1:8500&amp;amp;quot;, &amp;amp;quot;micro&amp;amp;quot;, &amp;amp;quot;config&amp;amp;quot;, &amp;amp;quot;jwt-key&amp;amp;quot;, &amp;amp;quot;key&amp;amp;quot;)
+plugin.Register(plugin.NewPlugin(
+plugin.WithName(&amp;amp;quot;auth&amp;amp;quot;),
+plugin.WithHandler(
+auth.JWTAuthWrapper(token),
+),
+))
+}
+const name = &amp;amp;quot;API gateway&amp;amp;quot;
+func main() {
+cmd.Init()
+}
+&amp;lt;/code&amp;gt;&amp;lt;/pre&amp;gt;&amp;lt;ul&amp;gt;
+&amp;lt;li&amp;gt;初始化我们封装JWT Token&amp;lt;/li&amp;gt;
+&amp;lt;/ul&amp;gt;
+&amp;lt;pre&amp;gt;&amp;lt;code&amp;gt;func (srv *Token) InitConfig(address string, path ...string)
+token.InitConfig(&amp;amp;quot;127.0.0.1:8500&amp;amp;quot;, &amp;amp;quot;micro&amp;amp;quot;, &amp;amp;quot;config&amp;amp;quot;, &amp;amp;quot;jwt-key&amp;amp;quot;, &amp;amp;quot;key&amp;amp;quot;)
+&amp;lt;/code&amp;gt;&amp;lt;/pre&amp;gt;&amp;lt;p&amp;gt;&amp;amp;ldquo;127.0.0.1:8500&amp;amp;rdquo; 是本地consul 监听地址，path是可变参数，传递consul KV中的配置路径：micro/config/jwt-key。
+&amp;lt;img loading=&amp;#34;lazy&amp;#34; src=&amp;#34;https://cdn.jsdelivr.net/gh/Allenxuxu/blog/img/aa823c9a7244f19509708a20f6faaa3b-6e7c49e6.png&amp;#34; alt=&amp;#34;aa823c9a7244f19509708a20f6faaa3b.png&amp;#34; /&amp;gt;
+&amp;lt;/p&amp;gt;
+&amp;lt;ul&amp;gt;
+&amp;lt;li&amp;gt;注册插件&amp;lt;/li&amp;gt;
+&amp;lt;/ul&amp;gt;
+&amp;lt;pre&amp;gt;&amp;lt;code&amp;gt;func Register(plugin Plugin) error //全局注册一个插件
+func NewPlugin(opts ...Option) Plugin //生成一个插件
+func WithName(n string) Option //设置插件的名字
+func WithHandler(h ...Handler) Option //http handler中间件
+&amp;lt;/code&amp;gt;&amp;lt;/pre&amp;gt;&amp;lt;p&amp;gt;注册一个新插件的时候，还可以定制其他操作，具体可以看作者的文档&amp;lt;a href=&amp;#34;https://micro.mu/docs/plugins-toolkit.html&amp;#34;&amp;gt;英文文档&amp;lt;/a&amp;gt;|&amp;lt;a href=&amp;#34;https://micro.mu/docs/cn/plugins-toolkit.html&amp;#34;&amp;gt;中文文档&amp;lt;/a&amp;gt;&amp;lt;/p&amp;gt;
+&amp;lt;p&amp;gt;在hander中将Token进行校验，如果鉴权成功，则调用 h.ServeHTTP(w, r) ，此时micro会调用下一个hander。
+如果鉴权失败，就修改状态码w.WriteHeader(http.StatusUnauthorized)， 不调用 h.ServeHTTP(w, r)，此时链式调用中断，micro框架不会调用剩下的hander。&amp;lt;/p&amp;gt;
+&amp;lt;p&amp;gt;&amp;lt;a href=&amp;#34;https://github.com/Allenxuxu/microservices&amp;#34;&amp;gt;github完整代码地址&amp;lt;/a&amp;gt;&amp;lt;/p&amp;gt;</description></item><item><title>Go Micro jaeger 分布式链路追踪</title><link>https://blog.iofree.xyz/posts/go-micro/go-micro-jaeger/</link><pubDate>Mon, 24 Jun 2019 11:22:38 +0800</pubDate><guid>https://blog.iofree.xyz/posts/go-micro/go-micro-jaeger/</guid><description>&amp;lt;h1 id=&amp;#34;安装jaeger&amp;#34;&amp;gt;安装jaeger&amp;lt;/h1&amp;gt;
+&amp;lt;p&amp;gt;jaeger提供一个all in one 的docker镜像，可以快速搭建实验环境&amp;lt;/p&amp;gt;
+&amp;lt;pre&amp;gt;&amp;lt;code&amp;gt;docker run -d --name jaeger
+-e COLLECTOR_ZIPKIN_HTTP_PORT=9411
+-p 5775:5775/udp
+-p 6831:6831/udp
+-p 6832:6832/udp
+-p 5778:5778
+-p 16686:16686
+-p 14268:14268
+-p 9411:9411
+jaegertracing/all-in-one:1.6
+&amp;lt;/code&amp;gt;&amp;lt;/pre&amp;gt;&amp;lt;h1 id=&amp;#34;opentracing&amp;#34;&amp;gt;OpenTracing&amp;lt;/h1&amp;gt;
+&amp;lt;p&amp;gt;OpenTracing通过提供平台无关、厂商无关的API，使得开发人员能够方便的添加（或更换）追踪系统的实现。 OpenTracing提供了用于运营支撑系统的和针对特定平台的辅助程序库。
+jaeger兼容OpenTracing API，所以我们使用OpenTracing的程序库可以方便的替换追踪工具。
+&amp;lt;a href=&amp;#34;https://wu-sheng.gitbooks.io/opentracing-io/content/&amp;#34;&amp;gt;OpenTracing中文文档&amp;lt;/a&amp;gt;&amp;lt;/p&amp;gt;
+&amp;lt;h1 id=&amp;#34;jaeger使用&amp;#34;&amp;gt;jaeger使用&amp;lt;/h1&amp;gt;
+&amp;lt;p&amp;gt;封住一下jaeger的初始化操作方便使用，详细用法可以查看 &amp;lt;a href=&amp;#34;https://github.com/jaegertracing/jaeger-client-go&amp;#34;&amp;gt;jaeger-client-go&amp;lt;/a&amp;gt;&amp;lt;/p&amp;gt;
+&amp;lt;pre&amp;gt;&amp;lt;code&amp;gt;// lib/tracer
+// NewTracer 创建一个jaeger Tracer
+func NewTracer(servicename string, addr string) (opentracing.Tracer, io.Closer, error) {
+cfg := jaegercfg.Configuration{
+ServiceName: servicename,
+Sampler: &amp;amp;amp;jaegercfg.SamplerConfig{
+Type: jaeger.SamplerTypeConst,
+Param: 1,
+},
+Reporter: &amp;amp;amp;jaegercfg.ReporterConfig{
+LogSpans: true,
+BufferFlushInterval: 1 * time.Second,
+},
+}
+sender, err := jaeger.NewUDPTransport(addr, 0)
+if err != nil {
+return nil, nil, err
+}
+reporter := jaeger.NewRemoteReporter(sender)
+// Initialize tracer with a logger and a metrics factory
+tracer, closer, err := cfg.NewTracer(
+jaegercfg.Reporter(reporter),
+)
+return tracer, closer, err
+}
+func main() {
+t, io, err := tracer.NewTracer(&amp;amp;quot;tracer&amp;amp;quot;, &amp;amp;quot;&amp;amp;quot;)
+if err != nil {
+log.Fatal(err)
+}
+defer io.Close()
+opentracing.SetGlobalTracer(t)
+}
+&amp;lt;/code&amp;gt;&amp;lt;/pre&amp;gt;&amp;lt;p&amp;gt;opentracing.SetGlobalTracer(t) 方法执行会将jaeger tracer注册到全局，接下来只需要使用opentracing 的标准API便可以了。
+如果不想使用jaeger了，想替换成其他分布式追踪工具，只需要工具支持opentracing标准，并将main函数的SetGlobalTracer操作替换即可，其他文件都不需要更改。&amp;lt;/p&amp;gt;
+&amp;lt;h1 id=&amp;#34;micro链路追踪插件&amp;#34;&amp;gt;micro链路追踪插件&amp;lt;/h1&amp;gt;
+&amp;lt;h2 id=&amp;#34;micro自带的opentracing插件&amp;#34;&amp;gt;micro自带的opentracing插件&amp;lt;/h2&amp;gt;
+&amp;lt;p&amp;gt;在micro自带的插件中已经有opentracing的插件了，包含server，client等，不过这个插件只能go-micro构建的微服务（api，srv）中使用。因为micro网关有一个独立的插件系统，但是并没有提供opentracing相关的插件。&amp;lt;/p&amp;gt;
+&amp;lt;blockquote&amp;gt;
+&amp;lt;p&amp;gt;micro/go-plugins/wrapper/trace/opentracing/opentracing.go&amp;lt;/p&amp;gt;
+&amp;lt;/blockquote&amp;gt;
+&amp;lt;p&amp;gt;我们可以在构建服务的时候直接使用，只需要在服务初始化时增加一行函数就可以了。&amp;lt;/p&amp;gt;
+&amp;lt;pre&amp;gt;&amp;lt;code&amp;gt;service := micro.NewService(
+micro.Name(name),
+micro.Version(&amp;amp;quot;latest&amp;amp;quot;),
+micro.WrapHandler(ocplugin.NewHandlerWrapper(opentracing.GlobalTracer())),
+)
+&amp;lt;/code&amp;gt;&amp;lt;/pre&amp;gt;&amp;lt;p&amp;gt;srv/user/main.go 目录下的user 服务是一个完整的使用实例。&amp;lt;/p&amp;gt;
+&amp;lt;h2 id=&amp;#34;为micro网关增加opentracing插件&amp;#34;&amp;gt;为micro网关增加opentracing插件&amp;lt;/h2&amp;gt;
+&amp;lt;h3 id=&amp;#34;实现原理&amp;#34;&amp;gt;实现原理&amp;lt;/h3&amp;gt;
+&amp;lt;p&amp;gt;&amp;lt;img loading=&amp;#34;lazy&amp;#34; src=&amp;#34;https://img.hacpai.com/file/2019/06/8491a458868a7ec946247c03da1af99e-02a68f77.png&amp;#34; alt=&amp;#34;8491a458868a7ec946247c03da1af99e.png&amp;#34; /&amp;gt;
+&amp;lt;/p&amp;gt;
+&amp;lt;p&amp;gt;外部HTTP请求首先经过API网关，网关生成第一个SpanContexts并且通过HTTP头传递到聚合层的API服务，这边需要我们实现一个插件去做这件事，原理很简单，拦截每一次请求添加信息就可以了。
+查看micro自带的opentracing插件，可以发现是通过golang的context传递，micro的RPC已经封装好了通过context在跨进程服务间传递SpanContexts机制，所以我们需要在API服务层实现一个插件，从HTTP头中取出SpanContexts并按照micro自带的方式注入golang context。&amp;lt;/p&amp;gt;
+&amp;lt;pre&amp;gt;&amp;lt;code&amp;gt;// micro opentracing插件中wHandlerWrappe
+// NewHandlerWrapper accepts an opentracing Tracer and returns a Handler Wrapper
+func NewHandlerWrapper(ot opentracing.Tracer) server.HandlerWrapper {
+return func(h server.HandlerFunc) server.HandlerFunc {
+return func(ctx context.Context, req server.Request, rsp interface{}) error {
+name := fmt.Sprintf(&amp;amp;quot;%s.%s&amp;amp;quot;, req.Service(), req.Endpoint())
+ctx, span, err := traceIntoContext(ctx, ot, name)
+if err != nil {
+return err
+}
+defer span.Finish()
+return h(ctx, req, rsp)
+}
+}
+}
+&amp;lt;/code&amp;gt;&amp;lt;/pre&amp;gt;&amp;lt;h3 id=&amp;#34;micro-api网关插件&amp;#34;&amp;gt;micro API网关插件&amp;lt;/h3&amp;gt;
+&amp;lt;blockquote&amp;gt;
+&amp;lt;p&amp;gt;lib/wrapper/tracer/opentracing/stdhttp/stdhttp.go&amp;lt;/p&amp;gt;
+&amp;lt;/blockquote&amp;gt;
+&amp;lt;p&amp;gt;和实现&amp;lt;a href=&amp;#34;/posts/go-micro/go-micro-gateway-jwt/&amp;#34;&amp;gt;JWT鉴权&amp;lt;/a&amp;gt;插件一样，实现一个HTTP中间件通过mciro的插件机制全局注册就可以实现拦截每次请求并处理。&amp;lt;/p&amp;gt;
+&amp;lt;pre&amp;gt;&amp;lt;code&amp;gt;// TracerWrapper tracer wrapper
+func TracerWrapper(h http.Handler) http.Handler {
+return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+spanCtx, _ := opentracing.GlobalTracer().Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(r.Header))
+sp := opentracing.GlobalTracer().StartSpan(r.URL.Path, opentracing.ChildOf(spanCtx))
+defer sp.Finish()
+if err := opentracing.GlobalTracer().Inject(
+sp.Context(),
+opentracing.HTTPHeaders,
+opentracing.HTTPHeadersCarrier(r.Header)); err != nil {
+log.Println(err)
+}
+sct := &amp;amp;amp;status_code.StatusCodeTracker{ResponseWriter: w, Status: http.StatusOK}
+h.ServeHTTP(sct.WrappedResponseWriter(), r)
+ext.HTTPMethod.Set(sp, r.Method)
+ext.HTTPUrl.Set(sp, r.URL.EscapedPath())
+ext.HTTPStatusCode.Set(sp, uint16(sct.Status))
+if sct.Status &amp;amp;gt;= http.StatusInternalServerError {
+ext.Error.Set(sp, true)
+}
+})
+}
+&amp;lt;/code&amp;gt;&amp;lt;/pre&amp;gt;&amp;lt;blockquote&amp;gt;
+&amp;lt;p&amp;gt;Tracer相关的概念可以查看这个&amp;lt;a href=&amp;#34;https://wu-sheng.gitbooks.io/opentracing-io/content/pages/spec.html&amp;#34;&amp;gt;文档&amp;lt;/a&amp;gt;&amp;lt;/p&amp;gt;
+&amp;lt;/blockquote&amp;gt;
+&amp;lt;ol&amp;gt;
+&amp;lt;li&amp;gt;opentracing.GlobalTracer().Extract 方法提取HTTP头中的spanContexts&amp;lt;/li&amp;gt;
+&amp;lt;li&amp;gt;opentracing.ChildOf 方法基于提取出来的spanContexts生成新的child spanContexts&amp;lt;/li&amp;gt;
+&amp;lt;li&amp;gt;opentracing.GlobalTracer().StartSpan 方法生成一个新的span&amp;lt;/li&amp;gt;
+&amp;lt;li&amp;gt;github.com/opentracing/opentracing-go/ext 通过ext可以为追踪添加一些tag来展示更多信息，比如URL，请求类型(GET，POST&amp;amp;hellip;), 返回码&amp;lt;/li&amp;gt;
+&amp;lt;li&amp;gt;sp.Finish() 结束这一个span&amp;lt;/li&amp;gt;
+&amp;lt;/ol&amp;gt;
+&amp;lt;h3 id=&amp;#34;api服务使用gin插件&amp;#34;&amp;gt;API服务（使用gin）插件&amp;lt;/h3&amp;gt;
+&amp;lt;blockquote&amp;gt;
+&amp;lt;p&amp;gt;lib/wrapper/tracer/opentracing/gin2micro/gin2micro.go&amp;lt;/p&amp;gt;
+&amp;lt;/blockquote&amp;gt;
+&amp;lt;pre&amp;gt;&amp;lt;code&amp;gt;// TracerWrapper tracer 中间件
+func TracerWrapper(c *gin.Context) {
+md := make(map[string]string)
+spanCtx, _ := opentracing.GlobalTracer().Extract(opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(c.Request.Header))
+sp := opentracing.GlobalTracer().StartSpan(c.Request.URL.Path, opentracing.ChildOf(spanCtx))
+defer sp.Finish()
+if err := opentracing.GlobalTracer().Inject(sp.Context(),
+opentracing.TextMap,
+opentracing.TextMapCarrier(md)); err != nil {
+log.Log(err)
+}
+ctx := context.TODO()
+ctx = opentracing.ContextWithSpan(ctx, sp)
+ctx = metadata.NewContext(ctx, md)
+c.Set(contextTracerKey, ctx)
+c.Next()
+statusCode := c.Writer.Status()
+ext.HTTPStatusCode.Set(sp, uint16(statusCode))
+ext.HTTPMethod.Set(sp, c.Request.Method)
+ext.HTTPUrl.Set(sp, c.Request.URL.EscapedPath())
+if statusCode &amp;amp;gt;= http.StatusInternalServerError {
+ext.Error.Set(sp, true)
+}
+}
+// ContextWithSpan 返回context
+func ContextWithSpan(c *gin.Context) (ctx context.Context, ok bool) {
+v, exist := c.Get(contextTracerKey)
+if exist == false {
+ok = false
+return
+}
+ctx, ok = v.(context.Context)
+return
+}
+&amp;lt;/code&amp;gt;&amp;lt;/pre&amp;gt;&amp;lt;p&amp;gt;基本操作流程和给micro编写的插件相同，但是有两点不同。其一，因为我使用gin开发API服务，所以基于gin的API。其二，因为micro内部提供通过golang context传递spanContexts的机制，所以将这边会将child spanContexts注入到gin 的context，在API服务通过micro提供RPC接口(生成的XX.micro.go文件中调用函数第一个参数都是context)调用其他服务时传入提取的context，如下：&amp;lt;/p&amp;gt;
+&amp;lt;pre&amp;gt;&amp;lt;code&amp;gt;...
+ctx, ok := gin2micro.ContextWithSpan(c)
+if ok == false {
+log.Log(&amp;amp;quot;get context err&amp;amp;quot;)
+}
+res, err := s.helloC.Call(ctx, &amp;amp;amp;helloS.Request{Name: &amp;amp;quot;xuxu&amp;amp;quot;})
+...
+&amp;lt;/code&amp;gt;&amp;lt;/pre&amp;gt;&amp;lt;p&amp;gt;完整的实现细节可以查看，github仓库中 lib/wrapper/tracer/opentracing， &amp;lt;a href=&amp;#34;https://github.com/Allenxuxu/microservices/tree/master/lib/wrapper/tracer/opentracing&amp;#34;&amp;gt;这里&amp;lt;/a&amp;gt;。&amp;lt;/p&amp;gt;
+&amp;lt;h1 id=&amp;#34;完整体验&amp;#34;&amp;gt;完整体验&amp;lt;/h1&amp;gt;
+&amp;lt;p&amp;gt;&amp;lt;img loading=&amp;#34;lazy&amp;#34; src=&amp;#34;https://cdn.jsdelivr.net/gh/Allenxuxu/blog/img/image-20210424113237000.png&amp;#34; alt=&amp;#34;34e3293430a69f2d7e8da9fa177ad5a3.png&amp;#34; /&amp;gt;
+&amp;lt;/p&amp;gt;
+&amp;lt;p&amp;gt;&amp;lt;img loading=&amp;#34;lazy&amp;#34; src=&amp;#34;https://cdn.jsdelivr.net/gh/Allenxuxu/blog/img/image-20210424113300568.png&amp;#34; alt=&amp;#34;image-20210424113300568&amp;#34; /&amp;gt;
+&amp;lt;/p&amp;gt;</description></item><item><title>Go Micro 重试机制</title><link>https://blog.iofree.xyz/posts/go-micro/go-micro-retry/</link><pubDate>Thu, 20 Jun 2019 11:22:38 +0800</pubDate><guid>https://blog.iofree.xyz/posts/go-micro/go-micro-retry/</guid><description>&amp;lt;p&amp;gt;在分布式系统中，经常会有服务出现故障，所以良好的重试机制可以大大的提高系统的可用性。本文主要分析micro的客户端重试机制，以及实例演示。&amp;lt;/p&amp;gt;
+&amp;lt;h1 id=&amp;#34;micro-重试实现&amp;#34;&amp;gt;micro 重试实现&amp;lt;/h1&amp;gt;
+&amp;lt;p&amp;gt;micro框架提供方法设置客户端重试的次数。&amp;lt;/p&amp;gt;
+&amp;lt;pre&amp;gt;&amp;lt;code&amp;gt;Client.Init(
+client.Retries(3),
+)
+&amp;lt;/code&amp;gt;&amp;lt;/pre&amp;gt;&amp;lt;p&amp;gt;当client请求失败时，客户端会根据selector的策略选择下一个节点重试请求。这样当一个服务实例故障时，客户端可以自动调用另一个实例。&amp;lt;/p&amp;gt;
+&amp;lt;p&amp;gt;我们来看看micro 客户端内部重试的实现：&amp;lt;/p&amp;gt;
+&amp;lt;blockquote&amp;gt;
+&amp;lt;p&amp;gt;go-micro\client\rpc_client.go&amp;lt;/p&amp;gt;
+&amp;lt;/blockquote&amp;gt;
+&amp;lt;pre&amp;gt;&amp;lt;code&amp;gt;func (r *rpcClient) Call(ctx context.Context, request Request, response interface{}, opts ...CallOption) error {
+...
+//客户端call 调用函数， 在下面的循环中调用
+call := func(i int) error {
+// call backoff first. Someone may want an initial start delay
+t, err := callOpts.Backoff(ctx, request, i)
+if err != nil {
+return errors.InternalServerError(&amp;amp;quot;go.micro.client&amp;amp;quot;, &amp;amp;quot;backoff error: %v&amp;amp;quot;, err.Error())
+}
+// only sleep if greater than 0
+if t.Seconds() &amp;amp;gt; 0 {
+time.Sleep(t)
+}
+// 根据selector策略 选出 下一个节点
+node, err := next()
+if err != nil &amp;amp;amp;&amp;amp;amp; err == selector.ErrNotFound {
+return errors.NotFound(&amp;amp;quot;go.micro.client&amp;amp;quot;, &amp;amp;quot;service %s: %v&amp;amp;quot;, request.Service(), err.Error())
+} else if err != nil {
+return errors.InternalServerError(&amp;amp;quot;go.micro.client&amp;amp;quot;, &amp;amp;quot;error getting next %s node: %v&amp;amp;quot;, request.Service(), err.Error())
+}
+// 客户端调用
+err = rcall(ctx, node, request, response, callOpts)
+r.opts.Selector.Mark(request.Service(), node, err)
+return err
+}
+ch := make(chan error, callOpts.Retries+1)
+var gerr error
+//根据设定的**Retries**（重试次数）循环调用 call，如果执行成功，调用超时或者设置的**Retry**函数执行出错则直接退出，不继续重试
+for i := 0; i &amp;amp;lt;= callOpts.Retries; i++ {
+go func(i int) {
+ch &amp;amp;lt;- call(i)
+}(i)
+select {
+case &amp;amp;lt;-ctx.Done(): //超时
+return errors.Timeout(&amp;amp;quot;go.micro.client&amp;amp;quot;, fmt.Sprintf(&amp;amp;quot;call timeout: %v&amp;amp;quot;, ctx.Err()))
+case err := &amp;amp;lt;-ch:
+// if the call succeeded lets bail early
+if err == nil { //调用成功
+return nil
+}
+retry, rerr := callOpts.Retry(ctx, request, i, err)
+if rerr != nil {
+return rerr
+}
+if !retry {
+return err
+}
+gerr = err
+}
+}
+return gerr
+}
+&amp;lt;/code&amp;gt;&amp;lt;/pre&amp;gt;&amp;lt;p&amp;gt;micro将选举下一个节点，RPC调用封装到一个匿名函数中，然后根据设定的重试次数循环调用。如果调用成功或者超时则直接返回，不继续重试。其中，当&amp;lt;strong&amp;gt;callOpts&amp;lt;/strong&amp;gt;里设定的&amp;lt;strong&amp;gt;Retry&amp;lt;/strong&amp;gt;函数执行失败，即第一个返回值为false，或者第二个返回值为err不会nil时，也会退出循环直接返回。&amp;lt;/p&amp;gt;
+&amp;lt;p&amp;gt;我们来看下Retry是什么：&amp;lt;/p&amp;gt;
+&amp;lt;pre&amp;gt;&amp;lt;code&amp;gt;type CallOptions struct {
+Retry RetryFunc
+}
+&amp;lt;/code&amp;gt;&amp;lt;/pre&amp;gt;&amp;lt;p&amp;gt;client的CallOptions中定义了Retry，我们跳转到RetryFunc&amp;lt;/p&amp;gt;
+&amp;lt;blockquote&amp;gt;
+&amp;lt;p&amp;gt;go-micro\client\retry.go&amp;lt;/p&amp;gt;
+&amp;lt;/blockquote&amp;gt;
+&amp;lt;pre&amp;gt;&amp;lt;code&amp;gt;// note that returning either false or a non-nil error will result in the call not being retried
+type RetryFunc func(ctx context.Context, req Request, retryCount int, err error) (bool, error)
+// RetryAlways always retry on error
+func RetryAlways(ctx context.Context, req Request, retryCount int, err error) (bool, error) {
+return true, nil
+}
+// RetryOnError retries a request on a 500 or timeout error
+func RetryOnError(ctx context.Context, req Request, retryCount int, err error) (bool, error) {
+if err == nil {
+return false, nil
+}
+e := errors.Parse(err.Error())
+if e == nil {
+return false, nil
+}
+switch e.Code {
+// retry on timeout or internal server error
+case 408, 500:
+return true, nil
+default:
+return false, nil
+}
+}
+&amp;lt;/code&amp;gt;&amp;lt;/pre&amp;gt;&amp;lt;p&amp;gt;从中我们可以发现，作者预实现了两个&amp;lt;strong&amp;gt;Retry&amp;lt;/strong&amp;gt;函数：&amp;lt;strong&amp;gt;RetryAlways&amp;lt;/strong&amp;gt;、&amp;lt;strong&amp;gt;RetryOnError&amp;lt;/strong&amp;gt;。
+&amp;lt;strong&amp;gt;RetryAlways&amp;lt;/strong&amp;gt;直接返回&amp;lt;strong&amp;gt;true, nil&amp;lt;/strong&amp;gt;，即不退出重试。
+&amp;lt;strong&amp;gt;RetryOnError&amp;lt;/strong&amp;gt;只有当e.Code（上一次RPC调用结果）为408或者500时才会返回&amp;lt;strong&amp;gt;true, nil&amp;lt;/strong&amp;gt;，继续重试。
+micro的默认&amp;lt;strong&amp;gt;Retry&amp;lt;/strong&amp;gt;为&amp;lt;strong&amp;gt;RetryOnError&amp;lt;/strong&amp;gt;，但是我们可以自定义并设置，下面的实验中将会演示。&amp;lt;/p&amp;gt;
+&amp;lt;pre&amp;gt;&amp;lt;code&amp;gt; DefaultRetry = RetryOnError
+// DefaultRetries is the default number of times a request is tried
+DefaultRetries = 1
+// DefaultRequestTimeout is the default request timeout
+DefaultRequestTimeout = time.Second * 5
+&amp;lt;/code&amp;gt;&amp;lt;/pre&amp;gt;&amp;lt;h1 id=&amp;#34;实验&amp;#34;&amp;gt;实验&amp;lt;/h1&amp;gt;
+&amp;lt;p&amp;gt;当客户端请求另一个服务时，如果被请求的服务突然挂了，而此时客户端依旧会去请求，重试时客户端会请求另一个实例（有一定几率还会请求同一个实例，因为默认的负载均衡策略是哈希随机）。&amp;lt;/p&amp;gt;
+&amp;lt;p&amp;gt;我们修改&amp;lt;strong&amp;gt;api/user&amp;lt;/strong&amp;gt;下的服务，在&amp;lt;strong&amp;gt;main&amp;lt;/strong&amp;gt;函数中设置客户端重试。&amp;lt;/p&amp;gt;
+&amp;lt;pre&amp;gt;&amp;lt;code&amp;gt;sClient := hystrixplugin.NewClientWrapper()(service.Options().Service.Client())
+sClient.Init(
+client.WrapCall(ocplugin.NewCallWrapper(t)),
+client.Retries(3),
+client.Retry(func(ctx context.Context, req client.Request, retryCount int, err error) (bool, error) {
+log.Log(req.Method(), retryCount, &amp;amp;quot; client retry&amp;amp;quot;)
+return true, nil
+}),
+)
+&amp;lt;/code&amp;gt;&amp;lt;/pre&amp;gt;&amp;lt;p&amp;gt;然后，我们依次启动 micro网关，user API服务，hello SRV服务（启动两个实例）。&amp;lt;/p&amp;gt;
+&amp;lt;pre&amp;gt;&amp;lt;code&amp;gt;cd micro &amp;amp;amp;&amp;amp;amp; make run
+cd api/user &amp;amp;amp;&amp;amp;amp; make run
+cd srv/hello &amp;amp;amp;&amp;amp;amp; make run
+cd srv/hello &amp;amp;amp;&amp;amp;amp; make run
+&amp;lt;/code&amp;gt;&amp;lt;/pre&amp;gt;&amp;lt;p&amp;gt;我们通过kill -9 杀死其中一个hello服务，然后通过postman请求 &amp;lt;strong&amp;gt;GET 172.0.0.1:8080/user/test&amp;lt;/strong&amp;gt;。&amp;lt;/p&amp;gt;
+&amp;lt;pre&amp;gt;&amp;lt;code&amp;gt;[GIN] 2019/05/14 - 14:52:20 | 200 | 1.253576ms | 127.0.0.1 | GET /user/test
+2019/05/14 14:52:48 Received Say.Anything API request
+2019/05/14 14:52:48 0x19a1680 0 retry func
+2019/05/14 14:52:48 msg:&amp;amp;quot;Hello xuxu&amp;amp;quot;
+[GIN] 2019/05/14 - 14:52:48 | 200 | 13.821193ms | 127.0.0.1 | GET /user/test
+&amp;lt;/code&amp;gt;&amp;lt;/pre&amp;gt;&amp;lt;p&amp;gt;通过usr API服务的输出，我们可以看到重试一次后，客户端成功请求了另一个实例。&amp;lt;/p&amp;gt;
+&amp;lt;p&amp;gt;github完整代码地址 &amp;lt;a href=&amp;#34;https://github.com/Allenxuxu/microservices&amp;#34;&amp;gt;https://github.com/Allenxuxu/microservices&amp;lt;/a&amp;gt;&amp;lt;/p&amp;gt;</description></item></channel></rss>
+This message is used to verify that this feed (feedId:73287159832503296) belongs to me (userId:62405606888475648). Join me in enjoying the next generation information browser https://follow.is.

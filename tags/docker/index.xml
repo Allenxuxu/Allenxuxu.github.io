@@ -1,9 +1,77 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Docker on 徐旭 的博客</title><link>https://blog.iofree.xyz/tags/docker/</link><description>Recent content in Docker on 徐旭 的博客</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><lastBuildDate>Thu, 18 Jul 2019 11:22:38 +0800</lastBuildDate><atom:link href="https://blog.iofree.xyz/tags/docker/index.xml" rel="self" type="application/rss+xml"/><item><title>dokcer swarm 部署go-micro微服务应用</title><link>https://blog.iofree.xyz/posts/docker/docker-swarm/</link><pubDate>Thu, 18 Jul 2019 11:22:38 +0800</pubDate><guid>https://blog.iofree.xyz/posts/docker/docker-swarm/</guid><description>微服务应用使用容器部署非常方便，但是当应用服务注册自身地址(ip:port)到服务注册中心的时候，如果注册的是容器内的ip，别的服务是无法访问到的。
-解决这个问题，可以在运行容器的时候指定网络模式为 host (&amp;ndash;net=host) ，这样就可以跳过 Docker 的独立网络栈，直接通过本机IP端口就可以访问，但是这样会大量占用本地端口。
-最好的场景还是后端服务都在容器网络中，仅 API 网关暴露一个端口供外部访问，但是同时还后端服务还需要能实现跨机器的网络连通。
-早期 Docker 本身的容器网络本身并不支持跨机器，也就是说明如果容器部署在不同的节点（服务器）上面，只能通过暴露端口到宿主机上，再通过宿主机之间进行通信。Docker 12.0 之后的版本自带 Docker Swarm，Docker Swarm 的 Overlay 网络驱动可以实现跨主机网络通信。Kubernetes 固然好，但是同时也非常重，学习成本也很大，Swarm 在小项目中还是有用武之地的。
-dokcer swarm 集群搭建 准备两台安装有 docker 的机器： 192.168.0.1 192.168.0.2
-192.168.0.1 创建master节点
-# docker swarm init # docker swarm join \ --token SWMTKN-1-3uu3gjkdt6xgk06wd1c9gfog8xec99ga69ilcclyzyk181n5ki-6f7frw75gvpdwsl1yvpf885lw \ 192.168.0.1:2377 This node joined a swarm as a worker. 复制上面的 docker swarm join &amp;hellip; 在 192.168.0.2 上执行，即将本机加入 swarm 集群。
-至此，我们已经创建了一个最基础的 swarm 的集群，执行命令查看：
-# docker node ls ID HOSTNAME STATUS AVAILABILITY MANAGER STATUS r76ighlnw0p2r0tbd9wmoqaep server2 Ready Active rzqbzl58hlu89xoty4cedn0er * server1 Ready Active Leader 创建 overlay 网络 先创建一个可以跨机器的 overlay 网络</description></item></channel></rss>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Docker on 顾惜朝 的博客</title><link>https://blog.iofree.xyz/tags/docker/</link><description>Recent content in Docker on 顾惜朝 的博客</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><lastBuildDate>Thu, 18 Jul 2019 11:22:38 +0800</lastBuildDate><atom:link href="https://blog.iofree.xyz/tags/docker/index.xml" rel="self" type="application/rss+xml"/><item><title>dokcer swarm 部署go-micro微服务应用</title><link>https://blog.iofree.xyz/posts/docker/docker-swarm/</link><pubDate>Thu, 18 Jul 2019 11:22:38 +0800</pubDate><guid>https://blog.iofree.xyz/posts/docker/docker-swarm/</guid><description>&amp;lt;p&amp;gt;微服务应用使用容器部署非常方便，但是当应用服务注册自身地址(ip:port)到服务注册中心的时候，如果注册的是容器内的ip，别的服务是无法访问到的。&amp;lt;/p&amp;gt;
+&amp;lt;p&amp;gt;解决这个问题，可以在运行容器的时候指定网络模式为 host (&amp;amp;ndash;net=host) ，这样就可以跳过 Docker 的独立网络栈，直接通过本机IP端口就可以访问，但是这样会大量占用本地端口。&amp;lt;/p&amp;gt;
+&amp;lt;p&amp;gt;最好的场景还是后端服务都在容器网络中，仅 API 网关暴露一个端口供外部访问，但是同时还后端服务还需要能实现跨机器的网络连通。&amp;lt;/p&amp;gt;
+&amp;lt;p&amp;gt;早期 Docker 本身的容器网络本身并不支持跨机器，也就是说明如果容器部署在不同的节点（服务器）上面，只能通过暴露端口到宿主机上，再通过宿主机之间进行通信。Docker 12.0 之后的版本自带 Docker Swarm，Docker Swarm 的 Overlay 网络驱动可以实现跨主机网络通信。Kubernetes 固然好，但是同时也非常重，学习成本也很大，Swarm 在小项目中还是有用武之地的。&amp;lt;/p&amp;gt;
+&amp;lt;h1 id=&amp;#34;dokcer-swarm-集群搭建&amp;#34;&amp;gt;dokcer swarm 集群搭建&amp;lt;/h1&amp;gt;
+&amp;lt;p&amp;gt;准备两台安装有 docker 的机器：
+192.168.0.1
+192.168.0.2&amp;lt;/p&amp;gt;
+&amp;lt;p&amp;gt;192.168.0.1 创建master节点&amp;lt;/p&amp;gt;
+&amp;lt;div class=&amp;#34;highlight&amp;#34;&amp;gt;&amp;lt;pre style=&amp;#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&amp;#34;&amp;gt;&amp;lt;code class=&amp;#34;language-bash&amp;#34; data-lang=&amp;#34;bash&amp;#34;&amp;gt;&amp;lt;span style=&amp;#34;color:#75715e&amp;#34;&amp;gt;# docker swarm init&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#75715e&amp;#34;&amp;gt;# docker swarm join \&amp;lt;/span&amp;gt;
+--token SWMTKN-1-3uu3gjkdt6xgk06wd1c9gfog8xec99ga69ilcclyzyk181n5ki-6f7frw75gvpdwsl1yvpf885lw &amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;\
+&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;&amp;lt;/span&amp;gt; 192.168.0.1:2377
+This node joined a swarm as a worker.
+&amp;lt;/code&amp;gt;&amp;lt;/pre&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;p&amp;gt;复制上面的 docker swarm join &amp;amp;hellip;
+在 192.168.0.2 上执行，即将本机加入 swarm 集群。&amp;lt;/p&amp;gt;
+&amp;lt;p&amp;gt;至此，我们已经创建了一个最基础的 swarm 的集群，执行命令查看：&amp;lt;/p&amp;gt;
+&amp;lt;pre&amp;gt;&amp;lt;code&amp;gt;# docker node ls
+ID HOSTNAME STATUS AVAILABILITY MANAGER STATUS
+r76ighlnw0p2r0tbd9wmoqaep server2 Ready Active
+rzqbzl58hlu89xoty4cedn0er * server1 Ready Active Leader
+&amp;lt;/code&amp;gt;&amp;lt;/pre&amp;gt;&amp;lt;h1 id=&amp;#34;创建-overlay-网络&amp;#34;&amp;gt;创建 overlay 网络&amp;lt;/h1&amp;gt;
+&amp;lt;p&amp;gt;先创建一个可以跨机器的 overlay 网络&amp;lt;/p&amp;gt;
+&amp;lt;pre&amp;gt;&amp;lt;code&amp;gt;docker network create -d overlay my_net
+&amp;lt;/code&amp;gt;&amp;lt;/pre&amp;gt;&amp;lt;h1 id=&amp;#34;部署应用服务&amp;#34;&amp;gt;部署应用服务&amp;lt;/h1&amp;gt;
+&amp;lt;h2 id=&amp;#34;部署服务注册中心-consul&amp;#34;&amp;gt;部署服务注册中心 consul&amp;lt;/h2&amp;gt;
+&amp;lt;p&amp;gt;在服务器 192.168.0.1 中使用 Docker 简单部署一个使用。&amp;lt;/p&amp;gt;
+&amp;lt;pre&amp;gt;&amp;lt;code&amp;gt;docker run --name consul -d -p 8500:8500/tcp consul agent -server -ui -bootstrap-expect=1 -client=0.0.0.0
+&amp;lt;/code&amp;gt;&amp;lt;/pre&amp;gt;&amp;lt;h2 id=&amp;#34;部署-api-网关&amp;#34;&amp;gt;部署 API 网关&amp;lt;/h2&amp;gt;
+&amp;lt;p&amp;gt;采用 micro 官方的 micro api，不了解 micro 的可以看我之前的博客，或者去 micro 官方仓库查看。&amp;lt;/p&amp;gt;
+&amp;lt;pre&amp;gt;&amp;lt;code&amp;gt;docker service create --replicas 4 --publish published=8898,target=8080 --name micro-p -e MICRO_REGISTRY=consul -e MICRO_REGISTRY_ADDRESS=192.168.0.1:8500 -e MICRO_API_HANDLER=http --network=my_net microhq/micro:latest api
+&amp;lt;/code&amp;gt;&amp;lt;/pre&amp;gt;&amp;lt;h2 id=&amp;#34;部署后端服务&amp;#34;&amp;gt;部署后端服务&amp;lt;/h2&amp;gt;
+&amp;lt;p&amp;gt;编写一个简单的 micro web 服务&amp;lt;/p&amp;gt;
+&amp;lt;div class=&amp;#34;highlight&amp;#34;&amp;gt;&amp;lt;pre style=&amp;#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&amp;#34;&amp;gt;&amp;lt;code class=&amp;#34;language-go&amp;#34; data-lang=&amp;#34;go&amp;#34;&amp;gt;&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;package&amp;lt;/span&amp;gt; &amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;main&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;import&amp;lt;/span&amp;gt; (
+&amp;lt;span style=&amp;#34;color:#e6db74&amp;#34;&amp;gt;&amp;amp;#34;log&amp;amp;#34;&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#e6db74&amp;#34;&amp;gt;&amp;amp;#34;github.com/gin-gonic/gin&amp;amp;#34;&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#e6db74&amp;#34;&amp;gt;&amp;amp;#34;github.com/micro/go-micro/web&amp;amp;#34;&amp;lt;/span&amp;gt;
+)
+&amp;lt;span style=&amp;#34;color:#66d9ef&amp;#34;&amp;gt;type&amp;lt;/span&amp;gt; &amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;Say&amp;lt;/span&amp;gt; &amp;lt;span style=&amp;#34;color:#66d9ef&amp;#34;&amp;gt;struct&amp;lt;/span&amp;gt;{}
+&amp;lt;span style=&amp;#34;color:#66d9ef&amp;#34;&amp;gt;func&amp;lt;/span&amp;gt; (&amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;s&amp;lt;/span&amp;gt; &amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;*&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;Say&amp;lt;/span&amp;gt;) &amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;Anything&amp;lt;/span&amp;gt;(&amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;c&amp;lt;/span&amp;gt; &amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;*&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;gin&amp;lt;/span&amp;gt;.&amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;Context&amp;lt;/span&amp;gt;) {
+&amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;log&amp;lt;/span&amp;gt;.&amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;Print&amp;lt;/span&amp;gt;(&amp;lt;span style=&amp;#34;color:#e6db74&amp;#34;&amp;gt;&amp;amp;#34;Received Say.Anything API request&amp;amp;#34;&amp;lt;/span&amp;gt;)
+&amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;c&amp;lt;/span&amp;gt;.&amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;JSON&amp;lt;/span&amp;gt;(&amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;200&amp;lt;/span&amp;gt;, &amp;lt;span style=&amp;#34;color:#66d9ef&amp;#34;&amp;gt;map&amp;lt;/span&amp;gt;[&amp;lt;span style=&amp;#34;color:#66d9ef&amp;#34;&amp;gt;string&amp;lt;/span&amp;gt;]&amp;lt;span style=&amp;#34;color:#66d9ef&amp;#34;&amp;gt;string&amp;lt;/span&amp;gt;{
+&amp;lt;span style=&amp;#34;color:#e6db74&amp;#34;&amp;gt;&amp;amp;#34;message&amp;amp;#34;&amp;lt;/span&amp;gt;: &amp;lt;span style=&amp;#34;color:#e6db74&amp;#34;&amp;gt;&amp;amp;#34;Hi, this is the Greeter API&amp;amp;#34;&amp;lt;/span&amp;gt;,
+})
+}
+&amp;lt;span style=&amp;#34;color:#66d9ef&amp;#34;&amp;gt;func&amp;lt;/span&amp;gt; &amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;main&amp;lt;/span&amp;gt;() {
+&amp;lt;span style=&amp;#34;color:#75715e&amp;#34;&amp;gt;// Create service
+&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#75715e&amp;#34;&amp;gt;&amp;lt;/span&amp;gt; &amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;service&amp;lt;/span&amp;gt; &amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;:=&amp;lt;/span&amp;gt; &amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;web&amp;lt;/span&amp;gt;.&amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;NewService&amp;lt;/span&amp;gt;(
+&amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;web&amp;lt;/span&amp;gt;.&amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;Name&amp;lt;/span&amp;gt;(&amp;lt;span style=&amp;#34;color:#e6db74&amp;#34;&amp;gt;&amp;amp;#34;go.micro.api.greeter&amp;amp;#34;&amp;lt;/span&amp;gt;),
+)
+&amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;service&amp;lt;/span&amp;gt;.&amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;Init&amp;lt;/span&amp;gt;()
+&amp;lt;span style=&amp;#34;color:#75715e&amp;#34;&amp;gt;// Create RESTful handler (using Gin)
+&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#75715e&amp;#34;&amp;gt;&amp;lt;/span&amp;gt; &amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;say&amp;lt;/span&amp;gt; &amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;:=&amp;lt;/span&amp;gt; new(&amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;Say&amp;lt;/span&amp;gt;)
+&amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;router&amp;lt;/span&amp;gt; &amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;:=&amp;lt;/span&amp;gt; &amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;gin&amp;lt;/span&amp;gt;.&amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;Default&amp;lt;/span&amp;gt;()
+&amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;router&amp;lt;/span&amp;gt;.&amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;GET&amp;lt;/span&amp;gt;(&amp;lt;span style=&amp;#34;color:#e6db74&amp;#34;&amp;gt;&amp;amp;#34;/greeter&amp;amp;#34;&amp;lt;/span&amp;gt;, &amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;say&amp;lt;/span&amp;gt;.&amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;Anything&amp;lt;/span&amp;gt;)
+&amp;lt;span style=&amp;#34;color:#75715e&amp;#34;&amp;gt;// Register Handler
+&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#75715e&amp;#34;&amp;gt;&amp;lt;/span&amp;gt; &amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;service&amp;lt;/span&amp;gt;.&amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;Handle&amp;lt;/span&amp;gt;(&amp;lt;span style=&amp;#34;color:#e6db74&amp;#34;&amp;gt;&amp;amp;#34;/&amp;amp;#34;&amp;lt;/span&amp;gt;, &amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;router&amp;lt;/span&amp;gt;)
+&amp;lt;span style=&amp;#34;color:#75715e&amp;#34;&amp;gt;// Run server
+&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#75715e&amp;#34;&amp;gt;&amp;lt;/span&amp;gt; &amp;lt;span style=&amp;#34;color:#66d9ef&amp;#34;&amp;gt;if&amp;lt;/span&amp;gt; &amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;err&amp;lt;/span&amp;gt; &amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;:=&amp;lt;/span&amp;gt; &amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;service&amp;lt;/span&amp;gt;.&amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;Run&amp;lt;/span&amp;gt;(); &amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;err&amp;lt;/span&amp;gt; &amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;!=&amp;lt;/span&amp;gt; &amp;lt;span style=&amp;#34;color:#66d9ef&amp;#34;&amp;gt;nil&amp;lt;/span&amp;gt; {
+&amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;log&amp;lt;/span&amp;gt;.&amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;Fatal&amp;lt;/span&amp;gt;(&amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;err&amp;lt;/span&amp;gt;)
+}
+}
+&amp;lt;/code&amp;gt;&amp;lt;/pre&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;p&amp;gt;Dockerfile 如下：&amp;lt;/p&amp;gt;
+&amp;lt;pre&amp;gt;&amp;lt;code&amp;gt;FROM alpine:latest
+RUN apk --no-cache add ca-certificates
+COPY hello-gin /hello-gin
+ENTRYPOINT /hello-gin
+LABEL Name=hello-gin Version=0.0.1
+&amp;lt;/code&amp;gt;&amp;lt;/pre&amp;gt;&amp;lt;p&amp;gt;将 Docker build 出来推到自己的 Docker 仓库上，或者直接 pull 我的镜像。&amp;lt;/p&amp;gt;
+&amp;lt;p&amp;gt;部署服务&amp;lt;/p&amp;gt;
+&amp;lt;pre&amp;gt;&amp;lt;code&amp;gt; docker service create --replicas 2 --name hello-xx -e MICRO_REGISTRY=consul -e MICRO_REGISTRY_ADDRESS=192.168.0.1:8500 --network=xuxu_net xuxu123/hello-gin:v0.1.0
+&amp;lt;/code&amp;gt;&amp;lt;/pre&amp;gt;&amp;lt;h1 id=&amp;#34;测试demo&amp;#34;&amp;gt;测试demo&amp;lt;/h1&amp;gt;
+&amp;lt;pre&amp;gt;&amp;lt;code&amp;gt;curl --request GET --url http://192.168.0.1:8080/greeter
+&amp;lt;/code&amp;gt;&amp;lt;/pre&amp;gt;&amp;lt;h1 id=&amp;#34;总结&amp;#34;&amp;gt;总结&amp;lt;/h1&amp;gt;
+&amp;lt;p&amp;gt;主要简单演练了一遍Docker Swarm 集群部署以及微服务部署的一个简单场景部署。相较于 K8S 的强大功能，Swarm 似乎显得有些多余，但是 Swarm 的简单明了在小厂中未必有没有用武之地吧。&amp;lt;/p&amp;gt;</description></item></channel></rss>
+This message is used to verify that this feed (feedId:73287159832503296) belongs to me (userId:62405606888475648). Join me in enjoying the next generation information browser https://follow.is.

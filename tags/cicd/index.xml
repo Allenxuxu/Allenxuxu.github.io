@@ -1,4 +1,169 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>CICD on 徐旭 的博客</title><link>https://blog.iofree.xyz/tags/cicd/</link><description>Recent content in CICD on 徐旭 的博客</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><lastBuildDate>Thu, 02 Apr 2020 11:22:38 +0800</lastBuildDate><atom:link href="https://blog.iofree.xyz/tags/cicd/index.xml" rel="self" type="application/rss+xml"/><item><title>Github Actions 配置 CI/CD 自动发布 docker 镜像</title><link>https://blog.iofree.xyz/posts/practice/github-action-docker/</link><pubDate>Thu, 02 Apr 2020 11:22:38 +0800</pubDate><guid>https://blog.iofree.xyz/posts/practice/github-action-docker/</guid><description>Github Actions 是 Github 内置的 CI/CD 工具，现在已经对所有的开源项目免费开放了。
-本文主要记录使用 Github Actions 实践 CI/CD 的一些配置。
-功能目标 代码静态检查 代码单元测试 release/tag 时自动 build 镜像并推送到 docker hub 项目 Dockerfile 和 Makefile 项目主要目录
-. ├── LICENSE ├── Makefile ├── README.md ├── config-srv │ ├── Makefile │ └── main.go ├── deployments │ ├── docker │ │ ├── config-srv │ │ │ └── Dockerfile ├── go.mod ├── go.sum config-srv 目录：服务代码 deployments 目录：所有服务的 Dockerfile Makefile 顶层 Makefile：build Docker 镜像 我们先看下顶层的 Makefile</description></item></channel></rss>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>CICD on 顾惜朝 的博客</title><link>https://blog.iofree.xyz/tags/cicd/</link><description>Recent content in CICD on 顾惜朝 的博客</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><lastBuildDate>Thu, 02 Apr 2020 11:22:38 +0800</lastBuildDate><atom:link href="https://blog.iofree.xyz/tags/cicd/index.xml" rel="self" type="application/rss+xml"/><item><title>Github Actions 配置 CI/CD 自动发布 docker 镜像</title><link>https://blog.iofree.xyz/posts/practice/github-action-docker/</link><pubDate>Thu, 02 Apr 2020 11:22:38 +0800</pubDate><guid>https://blog.iofree.xyz/posts/practice/github-action-docker/</guid><description>&amp;lt;p&amp;gt;Github Actions 是 Github 内置的 CI/CD 工具，现在已经对所有的开源项目免费开放了。&amp;lt;/p&amp;gt;
+&amp;lt;p&amp;gt;本文主要记录使用 Github Actions 实践 CI/CD 的一些配置。&amp;lt;/p&amp;gt;
+&amp;lt;h2 id=&amp;#34;功能目标&amp;#34;&amp;gt;功能目标&amp;lt;/h2&amp;gt;
+&amp;lt;ul&amp;gt;
+&amp;lt;li&amp;gt;代码静态检查&amp;lt;/li&amp;gt;
+&amp;lt;li&amp;gt;代码单元测试&amp;lt;/li&amp;gt;
+&amp;lt;li&amp;gt;release/tag 时自动 build 镜像并推送到 docker hub&amp;lt;/li&amp;gt;
+&amp;lt;/ul&amp;gt;
+&amp;lt;h2 id=&amp;#34;项目-dockerfile-和-makefile&amp;#34;&amp;gt;项目 Dockerfile 和 Makefile&amp;lt;/h2&amp;gt;
+&amp;lt;p&amp;gt;项目主要目录&amp;lt;/p&amp;gt;
+&amp;lt;pre&amp;gt;&amp;lt;code&amp;gt;.
+├── LICENSE
+├── Makefile
+├── README.md
+├── config-srv
+│ ├── Makefile
+│ └── main.go
+├── deployments
+│ ├── docker
+│ │ ├── config-srv
+│ │ │ └── Dockerfile
+├── go.mod
+├── go.sum
+&amp;lt;/code&amp;gt;&amp;lt;/pre&amp;gt;&amp;lt;ul&amp;gt;
+&amp;lt;li&amp;gt;config-srv 目录：服务代码&amp;lt;/li&amp;gt;
+&amp;lt;li&amp;gt;deployments 目录：所有服务的 Dockerfile&amp;lt;/li&amp;gt;
+&amp;lt;li&amp;gt;Makefile 顶层 Makefile：build Docker 镜像&amp;lt;/li&amp;gt;
+&amp;lt;/ul&amp;gt;
+&amp;lt;p&amp;gt;我们先看下顶层的 Makefile&amp;lt;/p&amp;gt;
+&amp;lt;div class=&amp;#34;highlight&amp;#34;&amp;gt;&amp;lt;pre style=&amp;#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&amp;#34;&amp;gt;&amp;lt;code class=&amp;#34;language-Makefile&amp;#34; data-lang=&amp;#34;Makefile&amp;#34;&amp;gt;&amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;.PHONY&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;:&amp;lt;/span&amp;gt; config-srv
+&amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;config-srv&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;:&amp;lt;/span&amp;gt;
+docker build -f deployments/docker/config-srv/Dockerfile . -t config-srv
+&amp;lt;/code&amp;gt;&amp;lt;/pre&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;p&amp;gt;我们可以在后面配置的 Github Actions 配置文件中执行 &amp;lt;code&amp;gt;make config-srv&amp;lt;/code&amp;gt;，这样就会执行 &amp;lt;code&amp;gt;docker build -f deployments/docker/config-srv/Dockerfile . -t config-srv&amp;lt;/code&amp;gt; ，构建一个 docker 镜像。&amp;lt;/p&amp;gt;
+&amp;lt;p&amp;gt;接下来，看一下 deployments/docker/config-srv/Dockerfile ，配置 Dockerfile 多阶段构建 。&amp;lt;/p&amp;gt;
+&amp;lt;pre&amp;gt;&amp;lt;code&amp;gt;FROM golang:1.13-alpine as builder
+WORKDIR /root
+COPY ./ ./
+RUN export GO111MODULE=on &amp;amp;amp;&amp;amp;amp; CGO_ENABLED=0 GOOS=linux go build -o build/config-srv config-srv/main.go
+FROM alpine:latest
+RUN apk --no-cache add ca-certificates
+WORKDIR /root
+COPY --from=builder /root/build/config-srv ./
+ENTRYPOINT [&amp;amp;quot;/root/config-srv&amp;amp;quot;]
+&amp;lt;/code&amp;gt;&amp;lt;/pre&amp;gt;&amp;lt;h2 id=&amp;#34;github-actions-具体配置&amp;#34;&amp;gt;Github Actions 具体配置&amp;lt;/h2&amp;gt;
+&amp;lt;h3 id=&amp;#34;commit-提交自动-ci&amp;#34;&amp;gt;commit 提交自动 CI&amp;lt;/h3&amp;gt;
+&amp;lt;div class=&amp;#34;highlight&amp;#34;&amp;gt;&amp;lt;pre style=&amp;#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&amp;#34;&amp;gt;&amp;lt;code class=&amp;#34;language-yaml&amp;#34; data-lang=&amp;#34;yaml&amp;#34;&amp;gt;&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;name&amp;lt;/span&amp;gt;: &amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;CI&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;on&amp;lt;/span&amp;gt;:
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;push&amp;lt;/span&amp;gt;:
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;branches&amp;lt;/span&amp;gt;:
+- &amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;master&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;paths-ignore&amp;lt;/span&amp;gt;:
+- &amp;lt;span style=&amp;#34;color:#e6db74&amp;#34;&amp;gt;&amp;amp;#39;README.md&amp;amp;#39;&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;pull_request&amp;lt;/span&amp;gt;:
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;branches&amp;lt;/span&amp;gt;:
+- &amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;master&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;paths-ignore&amp;lt;/span&amp;gt;:
+- &amp;lt;span style=&amp;#34;color:#e6db74&amp;#34;&amp;gt;&amp;amp;#39;README.md&amp;amp;#39;&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;jobs&amp;lt;/span&amp;gt;:
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;lint&amp;lt;/span&amp;gt;: &amp;lt;span style=&amp;#34;color:#75715e&amp;#34;&amp;gt;# 使用golangci-lint 进行静态检查&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;name&amp;lt;/span&amp;gt;: &amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;Lint&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;runs-on&amp;lt;/span&amp;gt;: &amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;ubuntu-latest&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;steps&amp;lt;/span&amp;gt;:
+- &amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;name&amp;lt;/span&amp;gt;: &amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;Set up Go 1.13&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;uses&amp;lt;/span&amp;gt;: &amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;actions/setup-go@v1&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;with&amp;lt;/span&amp;gt;:
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;go-version&amp;lt;/span&amp;gt;: &amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;1.13&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;id&amp;lt;/span&amp;gt;: &amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;go&amp;lt;/span&amp;gt;
+- &amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;name&amp;lt;/span&amp;gt;: &amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;Code&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;uses&amp;lt;/span&amp;gt;: &amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;actions/checkout@v1&amp;lt;/span&amp;gt;
+- &amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;name&amp;lt;/span&amp;gt;: &amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;Intsall Golangci-lint &amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;run&amp;lt;/span&amp;gt;: &amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh| sh -s -- -b . latest&amp;lt;/span&amp;gt;
+- &amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;name&amp;lt;/span&amp;gt;: &amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;Lint&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;run&amp;lt;/span&amp;gt;: &amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;./golangci-lint run --skip-dirs=&amp;amp;#34;.git|.github|dashboard|doc&amp;amp;#34; --timeout=5m&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;test&amp;lt;/span&amp;gt;:
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;name&amp;lt;/span&amp;gt;: &amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;Unit Testing&amp;lt;/span&amp;gt; &amp;lt;span style=&amp;#34;color:#75715e&amp;#34;&amp;gt;# go test&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;runs-on&amp;lt;/span&amp;gt;: &amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;${{ matrix.os }}&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;strategy&amp;lt;/span&amp;gt;:
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;matrix&amp;lt;/span&amp;gt;:
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;os&amp;lt;/span&amp;gt;: [&amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;ubuntu-latest] # 选择系统类型&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;steps&amp;lt;/span&amp;gt;:
+- &amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;name&amp;lt;/span&amp;gt;: &amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;Set up Go 1.13&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;uses&amp;lt;/span&amp;gt;: &amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;actions/setup-go@v1&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;with&amp;lt;/span&amp;gt;:
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;go-version&amp;lt;/span&amp;gt;: &amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;1.13&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;id&amp;lt;/span&amp;gt;: &amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;go&amp;lt;/span&amp;gt;
+- &amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;name&amp;lt;/span&amp;gt;: &amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;Code&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;uses&amp;lt;/span&amp;gt;: &amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;actions/checkout@v1&amp;lt;/span&amp;gt;
+- &amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;name&amp;lt;/span&amp;gt;: &amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;Go Get dependencies&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;run&amp;lt;/span&amp;gt;: &amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;go get -v -t -d ./...&amp;lt;/span&amp;gt;
+- &amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;name&amp;lt;/span&amp;gt;: &amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;Go Test&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;run&amp;lt;/span&amp;gt;: &amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;go test -v ./...&amp;lt;/span&amp;gt;
+&amp;lt;/code&amp;gt;&amp;lt;/pre&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;h3 id=&amp;#34;releasetag-时自动-cicd&amp;#34;&amp;gt;release/tag 时自动 CI/CD&amp;lt;/h3&amp;gt;
+&amp;lt;div class=&amp;#34;highlight&amp;#34;&amp;gt;&amp;lt;pre style=&amp;#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&amp;#34;&amp;gt;&amp;lt;code class=&amp;#34;language-yaml&amp;#34; data-lang=&amp;#34;yaml&amp;#34;&amp;gt;&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;name&amp;lt;/span&amp;gt;: &amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;Release&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#66d9ef&amp;#34;&amp;gt;on&amp;lt;/span&amp;gt;: &amp;lt;span style=&amp;#34;color:#75715e&amp;#34;&amp;gt;# 限定在 master 分支 release 操作时触发&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;release&amp;lt;/span&amp;gt;:
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;types&amp;lt;/span&amp;gt;: [&amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;published]&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;branches&amp;lt;/span&amp;gt;:
+- &amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;master&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;jobs&amp;lt;/span&amp;gt;:
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;lint&amp;lt;/span&amp;gt;: &amp;lt;span style=&amp;#34;color:#75715e&amp;#34;&amp;gt;# 静态检查&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;name&amp;lt;/span&amp;gt;: &amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;Lint&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;runs-on&amp;lt;/span&amp;gt;: &amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;ubuntu-latest&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;steps&amp;lt;/span&amp;gt;:
+- &amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;name&amp;lt;/span&amp;gt;: &amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;Set up Go 1.13&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;uses&amp;lt;/span&amp;gt;: &amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;actions/setup-go@v1&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;with&amp;lt;/span&amp;gt;:
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;go-version&amp;lt;/span&amp;gt;: &amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;1.13&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;id&amp;lt;/span&amp;gt;: &amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;go&amp;lt;/span&amp;gt;
+- &amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;name&amp;lt;/span&amp;gt;: &amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;Code&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;uses&amp;lt;/span&amp;gt;: &amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;actions/checkout@v1&amp;lt;/span&amp;gt;
+- &amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;name&amp;lt;/span&amp;gt;: &amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;Intsall Golangci-lint&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;run&amp;lt;/span&amp;gt;: &amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;curl -sfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh| sh -s -- -b . latest&amp;lt;/span&amp;gt;
+- &amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;name&amp;lt;/span&amp;gt;: &amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;Lint&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;run&amp;lt;/span&amp;gt;: &amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;./golangci-lint run --skip-dirs=&amp;amp;#34;.git|.github|dashboard|doc&amp;amp;#34; --timeout=5m&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;test&amp;lt;/span&amp;gt;:
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;name&amp;lt;/span&amp;gt;: &amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;Unit Testing &amp;lt;/span&amp;gt; &amp;lt;span style=&amp;#34;color:#75715e&amp;#34;&amp;gt;# 单元测试&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;runs-on&amp;lt;/span&amp;gt;: &amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;${{ matrix.os }}&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;strategy&amp;lt;/span&amp;gt;:
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;matrix&amp;lt;/span&amp;gt;:
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;os&amp;lt;/span&amp;gt;: [&amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;ubuntu-latest]&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;steps&amp;lt;/span&amp;gt;:
+- &amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;name&amp;lt;/span&amp;gt;: &amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;Set up Go 1.13&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;uses&amp;lt;/span&amp;gt;: &amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;actions/setup-go@v1&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;with&amp;lt;/span&amp;gt;:
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;go-version&amp;lt;/span&amp;gt;: &amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;1.13&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;id&amp;lt;/span&amp;gt;: &amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;go&amp;lt;/span&amp;gt;
+- &amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;name&amp;lt;/span&amp;gt;: &amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;Code&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;uses&amp;lt;/span&amp;gt;: &amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;actions/checkout@v1&amp;lt;/span&amp;gt;
+- &amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;name&amp;lt;/span&amp;gt;: &amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;Go Get dependencies&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;run&amp;lt;/span&amp;gt;: &amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;go get -v -t -d ./...&amp;lt;/span&amp;gt;
+- &amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;name&amp;lt;/span&amp;gt;: &amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;Go Test&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;run&amp;lt;/span&amp;gt;: &amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;go test -v ./...&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;docker&amp;lt;/span&amp;gt;: &amp;lt;span style=&amp;#34;color:#75715e&amp;#34;&amp;gt;# build docker 镜像并且推送&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;needs&amp;lt;/span&amp;gt;: [&amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;lint, test]&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;name&amp;lt;/span&amp;gt;: &amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;docker build and push&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;runs-on&amp;lt;/span&amp;gt;: &amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;ubuntu-latest&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;steps&amp;lt;/span&amp;gt;:
+- &amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;name&amp;lt;/span&amp;gt;: &amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;Code&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;uses&amp;lt;/span&amp;gt;: &amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;actions/checkout@v1&amp;lt;/span&amp;gt;
+- &amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;name&amp;lt;/span&amp;gt;: &amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;Set env&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;run&amp;lt;/span&amp;gt;: &amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;echo ::set-env name=RELEASE_VERSION::$(echo ${GITHUB_REF:10})&amp;lt;/span&amp;gt; &amp;lt;span style=&amp;#34;color:#75715e&amp;#34;&amp;gt;# 取tag名称，后面作为 docker 的 tag&amp;lt;/span&amp;gt;
+- &amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;name&amp;lt;/span&amp;gt;: &amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;tag&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;run&amp;lt;/span&amp;gt;: &amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;echo ${{ env.RELEASE_VERSION }}&amp;lt;/span&amp;gt;
+- &amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;name&amp;lt;/span&amp;gt;: &amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;config-srv &amp;lt;/span&amp;gt; &amp;lt;span style=&amp;#34;color:#75715e&amp;#34;&amp;gt;# 执行代码仓库中的 Makefile ，在 Makefile 中执行 docker build 操作&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;run&amp;lt;/span&amp;gt;: |&amp;lt;span style=&amp;#34;color:#e6db74&amp;#34;&amp;gt;
+&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#e6db74&amp;#34;&amp;gt; make config-srv
+&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#e6db74&amp;#34;&amp;gt; docker login docker.io -u ${{ secrets.REGISTRY_USERNAME }} -p ${{ secrets.REGISTRY_PASSWORD }}
+&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#e6db74&amp;#34;&amp;gt; docker tag config-srv:latest ${{ secrets.REGISTRY_USERNAME }}/config-srv:latest
+&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#e6db74&amp;#34;&amp;gt; docker tag config-srv:latest ${{ secrets.REGISTRY_USERNAME }}/config-srv:${{ env.RELEASE_VERSION }}
+&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#e6db74&amp;#34;&amp;gt;
+&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#e6db74&amp;#34;&amp;gt; docker push ${{ secrets.REGISTRY_USERNAME }}/config-srv:latest
+&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#e6db74&amp;#34;&amp;gt; docker push ${{ secrets.REGISTRY_USERNAME }}/config-srv:${{ env.RELEASE_VERSION }}&amp;lt;/span&amp;gt;
+&amp;lt;/code&amp;gt;&amp;lt;/pre&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;p&amp;gt;上述的 &amp;lt;code&amp;gt;${{ secrets.REGISTRY_USERNAME }}&amp;lt;/code&amp;gt; 等环境变量，皆在 Github - settings - secrets 中设置。登陆 docker hub 所需要的账号密码或者其他敏感信息都在此设置，避免明文写在 yaml 中。&amp;lt;/p&amp;gt;
+&amp;lt;p&amp;gt;&amp;lt;img loading=&amp;#34;lazy&amp;#34; src=&amp;#34;https://img.hacpai.com/file/2020/04/image-1fbd4149.png&amp;#34; alt=&amp;#34;image.png&amp;#34; /&amp;gt;
+&amp;lt;/p&amp;gt;
+&amp;lt;p&amp;gt;在 Github 的项目仓库顶层 .github/workflows 文件夹放置两个 yml 文件即可。每次 commit 提交都会触发 ci.yml 中的配置逻辑，当 release 发布时就会触发 release.yml 中的配置逻辑。&amp;lt;/p&amp;gt;
+&amp;lt;pre&amp;gt;&amp;lt;code&amp;gt;.github
+└── workflows
+├── ci.yml
+└── release.yml
+1 directory, 2 files
+&amp;lt;/code&amp;gt;&amp;lt;/pre&amp;gt;&amp;lt;p&amp;gt;触发的 pipeline 可以在项目主页 Tab 栏点击 Actions 查看。&amp;lt;/p&amp;gt;
+&amp;lt;p&amp;gt;本文 Makefile ，Dockefile ，CI 配置都节取自 &amp;lt;a href=&amp;#34;https://github.com/micro-in-cn/XConf&amp;#34; title=&amp;#34;点击访问 Github&amp;#34;&amp;gt;XConf&amp;lt;/a&amp;gt; 项目，可以去仓库查看完整配置。&amp;lt;/p&amp;gt;
+&amp;lt;h3 id=&amp;#34;相关实践项目&amp;#34;&amp;gt;相关实践项目&amp;lt;/h3&amp;gt;
+&amp;lt;ul&amp;gt;
+&amp;lt;li&amp;gt;&amp;lt;a href=&amp;#34;https://github.com/micro-in-cn/XConf&amp;#34; title=&amp;#34;点击访问 Github&amp;#34;&amp;gt;XConf&amp;lt;/a&amp;gt; : 基于 go-micro 构建的分布式配置中心。&amp;lt;/li&amp;gt;
+&amp;lt;li&amp;gt;&amp;lt;a href=&amp;#34;https://github.com/Allenxuxu/gev&amp;#34; title=&amp;#34;点击访问 Github&amp;#34;&amp;gt;Gev&amp;lt;/a&amp;gt;: 一个轻量、快速的基于 Reactor 模式的非阻塞 Golang TCP 网络库，支持自定义协议，轻松快速搭建高性能服务器。&amp;lt;/li&amp;gt;
+&amp;lt;/ul&amp;gt;</description></item></channel></rss>
+This message is used to verify that this feed (feedId:73287159832503296) belongs to me (userId:62405606888475648). Join me in enjoying the next generation information browser https://follow.is.

@@ -1,17 +1,49 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>git on 徐旭 的博客</title><link>https://blog.iofree.xyz/tags/git/</link><description>Recent content in git on 徐旭 的博客</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><lastBuildDate>Sun, 26 Dec 2021 10:53:19 +0800</lastBuildDate><atom:link href="https://blog.iofree.xyz/tags/git/index.xml" rel="self" type="application/rss+xml"/><item><title>Git自动设置不同邮箱</title><link>https://blog.iofree.xyz/posts/git/email/</link><pubDate>Sun, 26 Dec 2021 10:53:19 +0800</pubDate><guid>https://blog.iofree.xyz/posts/git/email/</guid><description>日常使用时，经常出现提交公司项目不小心用的私人邮箱，或者提交 Github 项目用了公司邮箱的情况，所以希望 Git 提交时能自动根据域名选择不同的邮箱。
-全局设置必须配置用户名邮箱
-git config --global user.useConfigOnly true 并且删除全局的 user.name 和 user.email 配置，这样本地如果有一些项目之前是读取全局配置邮箱的需要手动设置一下( 可以用复制下面的脚本里的部分代码进行自动设置，即 if 分支里的逻辑)。
-所有的全局配置都在 ~/.gitconfig 文件中
-设置 git hooks templates 目录
-mkdir -p ~/.git-templates/hooks git config --global init.templatedir ~/.git-templates 然后在 ~/.git-templates/hooks目录里新建 post-checkout文件，内容如下：
-#!/bin/bash if [[ $1 == 00000000000* ]]; then remote=`git remote -v | awk &amp;#39;/\(push\)$/ {print $2}&amp;#39;` email=xxx@xx.com # default name=&amp;#34;x x&amp;#34; if [[ $remote == *需要匹配的公司域名* ]]; then email=x@cc.com name=&amp;#34;x x&amp;#34; fi echo &amp;#34;Configuring user &amp;lt;name: $nameemail: $email&amp;gt;&amp;#34; git config user.</description></item><item><title>git 修改已经 commit 的邮箱信息</title><link>https://blog.iofree.xyz/posts/practice/git-amend/</link><pubDate>Thu, 10 Sep 2020 11:22:38 +0800</pubDate><guid>https://blog.iofree.xyz/posts/practice/git-amend/</guid><description>开发过程中，经常会出现提交邮箱搞错的情况。在公司项目中错误提交了自己的 GitHub 邮箱，或者在开源项目中提交了公司邮箱。
-下面记录一下补救措施。
-先修改 .git/config 或者 修改全局的，修改成你需要的邮箱信息。
-[user] email = name@qq.com name = yourname git log 找到要修改的那一条 commit，复制要修改的commit 的前一条 commit 的哈希值。
-git rebase -i {{刚刚复制的哈希值}}
-# 或者最近 3 条 $ git rebase -i HEAD~3 然后后会出现一个 vim 打开的文本，将需要修改的 commit 信息前面的 pick 文本改成 edit，保存退出。
-修改邮箱信息
-git commit --amend --author=&amp;quot;name &amp;lt;name@qq.com&amp;gt;&amp;quot; --no-edit
-然后 git rebase --continue
-中间也可跳过或退出 rebase 模式git rebase --skip git rebase --abort
-循环执行上面两步，当输出 Successfully rebased and updated refs/heads/master. 修改完成。</description></item></channel></rss>
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>git on 顾惜朝 的博客</title><link>https://blog.iofree.xyz/tags/git/</link><description>Recent content in git on 顾惜朝 的博客</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><lastBuildDate>Sun, 26 Dec 2021 10:53:19 +0800</lastBuildDate><atom:link href="https://blog.iofree.xyz/tags/git/index.xml" rel="self" type="application/rss+xml"/><item><title>Git自动设置不同邮箱</title><link>https://blog.iofree.xyz/posts/git/email/</link><pubDate>Sun, 26 Dec 2021 10:53:19 +0800</pubDate><guid>https://blog.iofree.xyz/posts/git/email/</guid><description>&amp;lt;p&amp;gt;日常使用时，经常出现提交公司项目不小心用的私人邮箱，或者提交 Github 项目用了公司邮箱的情况，所以希望 Git 提交时能自动根据域名选择不同的邮箱。&amp;lt;/p&amp;gt;
+&amp;lt;p&amp;gt;全局设置必须配置用户名邮箱&amp;lt;/p&amp;gt;
+&amp;lt;div class=&amp;#34;highlight&amp;#34;&amp;gt;&amp;lt;pre style=&amp;#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&amp;#34;&amp;gt;&amp;lt;code class=&amp;#34;language-bash&amp;#34; data-lang=&amp;#34;bash&amp;#34;&amp;gt;git config --global user.useConfigOnly true
+&amp;lt;/code&amp;gt;&amp;lt;/pre&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;p&amp;gt;并且删除全局的 user.name 和 user.email 配置，这样本地如果有一些项目之前是读取全局配置邮箱的需要手动设置一下( 可以用复制下面的脚本里的部分代码进行自动设置，即 if 分支里的逻辑)。&amp;lt;/p&amp;gt;
+&amp;lt;blockquote&amp;gt;
+&amp;lt;p&amp;gt;所有的全局配置都在 ~/.gitconfig 文件中&amp;lt;/p&amp;gt;
+&amp;lt;/blockquote&amp;gt;
+&amp;lt;p&amp;gt;设置 git hooks templates 目录&amp;lt;/p&amp;gt;
+&amp;lt;div class=&amp;#34;highlight&amp;#34;&amp;gt;&amp;lt;pre style=&amp;#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&amp;#34;&amp;gt;&amp;lt;code class=&amp;#34;language-go&amp;#34; data-lang=&amp;#34;go&amp;#34;&amp;gt;&amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;mkdir&amp;lt;/span&amp;gt; &amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;-&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;p&amp;lt;/span&amp;gt; &amp;lt;span style=&amp;#34;color:#960050;background-color:#1e0010&amp;#34;&amp;gt;~&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;/&amp;lt;/span&amp;gt;.&amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;git&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;-&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;templates&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;/&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;hooks&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;git&amp;lt;/span&amp;gt; &amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;config&amp;lt;/span&amp;gt; &amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;--&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;global&amp;lt;/span&amp;gt; &amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;init&amp;lt;/span&amp;gt;.&amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;templatedir&amp;lt;/span&amp;gt; &amp;lt;span style=&amp;#34;color:#960050;background-color:#1e0010&amp;#34;&amp;gt;~&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;/&amp;lt;/span&amp;gt;.&amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;git&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;-&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;templates&amp;lt;/span&amp;gt;
+&amp;lt;/code&amp;gt;&amp;lt;/pre&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;p&amp;gt;然后在 &amp;lt;code&amp;gt;~/.git-templates/hooks&amp;lt;/code&amp;gt;目录里新建 &amp;lt;code&amp;gt;post-checkout&amp;lt;/code&amp;gt;文件，内容如下：&amp;lt;/p&amp;gt;
+&amp;lt;div class=&amp;#34;highlight&amp;#34;&amp;gt;&amp;lt;pre style=&amp;#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&amp;#34;&amp;gt;&amp;lt;code class=&amp;#34;language-bash&amp;#34; data-lang=&amp;#34;bash&amp;#34;&amp;gt;&amp;lt;span style=&amp;#34;color:#75715e&amp;#34;&amp;gt;#!/bin/bash
+&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#75715e&amp;#34;&amp;gt;&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#66d9ef&amp;#34;&amp;gt;if&amp;lt;/span&amp;gt; &amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;[[&amp;lt;/span&amp;gt; $1 &amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;==&amp;lt;/span&amp;gt; 00000000000* &amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;]]&amp;lt;/span&amp;gt;; &amp;lt;span style=&amp;#34;color:#66d9ef&amp;#34;&amp;gt;then&amp;lt;/span&amp;gt;
+remote&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;=&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#e6db74&amp;#34;&amp;gt;`&amp;lt;/span&amp;gt;git remote -v | awk &amp;lt;span style=&amp;#34;color:#e6db74&amp;#34;&amp;gt;&amp;amp;#39;/\(push\)$/ {print $2}&amp;amp;#39;&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#e6db74&amp;#34;&amp;gt;`&amp;lt;/span&amp;gt;
+email&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;=&amp;lt;/span&amp;gt;xxx@xx.com &amp;lt;span style=&amp;#34;color:#75715e&amp;#34;&amp;gt;# default&amp;lt;/span&amp;gt;
+name&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;=&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#e6db74&amp;#34;&amp;gt;&amp;amp;#34;x x&amp;amp;#34;&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#66d9ef&amp;#34;&amp;gt;if&amp;lt;/span&amp;gt; &amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;[[&amp;lt;/span&amp;gt; $remote &amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;==&amp;lt;/span&amp;gt; *需要匹配的公司域名* &amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;]]&amp;lt;/span&amp;gt;; &amp;lt;span style=&amp;#34;color:#66d9ef&amp;#34;&amp;gt;then&amp;lt;/span&amp;gt;
+email&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;=&amp;lt;/span&amp;gt;x@cc.com
+name&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;=&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#e6db74&amp;#34;&amp;gt;&amp;amp;#34;x x&amp;amp;#34;&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#66d9ef&amp;#34;&amp;gt;fi&amp;lt;/span&amp;gt;
+echo &amp;lt;span style=&amp;#34;color:#e6db74&amp;#34;&amp;gt;&amp;amp;#34;Configuring user &amp;amp;lt;name: &amp;lt;/span&amp;gt;$name&amp;lt;span style=&amp;#34;color:#e6db74&amp;#34;&amp;gt; email: &amp;lt;/span&amp;gt;$email&amp;lt;span style=&amp;#34;color:#e6db74&amp;#34;&amp;gt;&amp;amp;gt;&amp;amp;#34;&amp;lt;/span&amp;gt;
+git config user.email &amp;lt;span style=&amp;#34;color:#e6db74&amp;#34;&amp;gt;&amp;amp;#34;&amp;lt;/span&amp;gt;$email&amp;lt;span style=&amp;#34;color:#e6db74&amp;#34;&amp;gt;&amp;amp;#34;&amp;lt;/span&amp;gt;
+git config user.name &amp;lt;span style=&amp;#34;color:#e6db74&amp;#34;&amp;gt;&amp;amp;#34;&amp;lt;/span&amp;gt;$name&amp;lt;span style=&amp;#34;color:#e6db74&amp;#34;&amp;gt;&amp;amp;#34;&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#66d9ef&amp;#34;&amp;gt;fi&amp;lt;/span&amp;gt;
+&amp;lt;/code&amp;gt;&amp;lt;/pre&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;p&amp;gt;修改上面的用户名，邮箱和需要特殊匹配的公司域名。&amp;lt;/p&amp;gt;
+&amp;lt;p&amp;gt;这样在 &amp;lt;code&amp;gt;git clone&amp;lt;/code&amp;gt; 的时候，git 会自动执行 &amp;lt;code&amp;gt;post-checkout&amp;lt;/code&amp;gt;从而按照域名自动设置邮箱用户名。&amp;lt;/p&amp;gt;</description></item><item><title>git 修改已经 commit 的邮箱信息</title><link>https://blog.iofree.xyz/posts/practice/git-amend/</link><pubDate>Thu, 10 Sep 2020 11:22:38 +0800</pubDate><guid>https://blog.iofree.xyz/posts/practice/git-amend/</guid><description>&amp;lt;p&amp;gt;开发过程中，经常会出现提交邮箱搞错的情况。在公司项目中错误提交了自己的 GitHub 邮箱，或者在开源项目中提交了公司邮箱。&amp;lt;/p&amp;gt;
+&amp;lt;p&amp;gt;下面记录一下补救措施。&amp;lt;/p&amp;gt;
+&amp;lt;p&amp;gt;先修改 .git/config 或者 修改全局的，修改成你需要的邮箱信息。&amp;lt;/p&amp;gt;
+&amp;lt;pre&amp;gt;&amp;lt;code&amp;gt;[user]
+email = name@qq.com
+name = yourname
+&amp;lt;/code&amp;gt;&amp;lt;/pre&amp;gt;&amp;lt;p&amp;gt;git log 找到要修改的那一条 commit，复制要修改的commit 的前一条 commit 的哈希值。&amp;lt;/p&amp;gt;
+&amp;lt;p&amp;gt;&amp;lt;code&amp;gt;git rebase -i {{刚刚复制的哈希值}}&amp;lt;/code&amp;gt;&amp;lt;/p&amp;gt;
+&amp;lt;div class=&amp;#34;highlight&amp;#34;&amp;gt;&amp;lt;pre style=&amp;#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&amp;#34;&amp;gt;&amp;lt;code class=&amp;#34;language-javascript&amp;#34; data-lang=&amp;#34;javascript&amp;#34;&amp;gt;&amp;lt;span style=&amp;#34;color:#960050;background-color:#1e0010&amp;#34;&amp;gt;#&amp;lt;/span&amp;gt; &amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;或者最近&amp;lt;/span&amp;gt; &amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;3&amp;lt;/span&amp;gt; &amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;条&amp;lt;/span&amp;gt;
+&amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;$&amp;lt;/span&amp;gt; &amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;git&amp;lt;/span&amp;gt; &amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;rebase&amp;lt;/span&amp;gt; &amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;-&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;i&amp;lt;/span&amp;gt; &amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;HEAD&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#f92672&amp;#34;&amp;gt;~&amp;lt;/span&amp;gt;&amp;lt;span style=&amp;#34;color:#ae81ff&amp;#34;&amp;gt;3&amp;lt;/span&amp;gt;
+&amp;lt;/code&amp;gt;&amp;lt;/pre&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;p&amp;gt;然后后会出现一个 vim 打开的文本，将需要修改的 commit 信息前面的 pick 文本改成 edit，保存退出。&amp;lt;/p&amp;gt;
+&amp;lt;p&amp;gt;修改邮箱信息&amp;lt;/p&amp;gt;
+&amp;lt;p&amp;gt;&amp;lt;code&amp;gt;git commit --amend --author=&amp;amp;quot;name &amp;amp;lt;name@qq.com&amp;amp;gt;&amp;amp;quot; --no-edit&amp;lt;/code&amp;gt;&amp;lt;/p&amp;gt;
+&amp;lt;p&amp;gt;然后 &amp;lt;code&amp;gt;git rebase --continue&amp;lt;/code&amp;gt;&amp;lt;/p&amp;gt;
+&amp;lt;blockquote&amp;gt;
+&amp;lt;p&amp;gt;中间也可跳过或退出 rebase 模式&amp;lt;code&amp;gt;git rebase --skip&amp;lt;/code&amp;gt; &amp;lt;code&amp;gt;git rebase --abort&amp;lt;/code&amp;gt;&amp;lt;/p&amp;gt;
+&amp;lt;/blockquote&amp;gt;
+&amp;lt;p&amp;gt;循环执行上面两步，当输出 &amp;lt;code&amp;gt;Successfully rebased and updated refs/heads/master.&amp;lt;/code&amp;gt; 修改完成。&amp;lt;/p&amp;gt;
+&amp;lt;p&amp;gt;这时候查看 git log 信息，发现邮箱已经更改了。&amp;lt;/p&amp;gt;
+&amp;lt;p&amp;gt;强制 push 到远程（注意风险）&amp;lt;/p&amp;gt;
+&amp;lt;p&amp;gt;&amp;lt;code&amp;gt;git push -f origin HEAD:master&amp;lt;/code&amp;gt;&amp;lt;/p&amp;gt;
+&amp;lt;p&amp;gt;done！&amp;lt;/p&amp;gt;</description></item></channel></rss>
+This message is used to verify that this feed (feedId:73287159832503296) belongs to me (userId:62405606888475648). Join me in enjoying the next generation information browser https://follow.is.
