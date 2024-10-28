@@ -157,4 +157,3 @@ Rebalance（重平衡）机制，用于在发生Broker掉线、Topic扩容和缩
 &amp;lt;p&amp;gt;Half Message 并未真正进入Topic的queue，而是用了临时queue来放所谓的half message，等提交事务后才会真正的将half message转移到topic下的queue。&amp;lt;/p&amp;gt;
 &amp;lt;h4 id=&amp;#34;至少一次&amp;#34;&amp;gt;至少一次&amp;lt;/h4&amp;gt;
 &amp;lt;p&amp;gt;至少一次(At least Once)指每个消息必须投递一次。Consumer先Pull消息到本地，消费完成后，才向服务器返回ack，如果没有消费一定不会ack消息，但是可能会有 重复消费。&amp;lt;/p&amp;gt;</description></item></channel></rss>
-This message is used to verify that this feed (feedId:73287159832503296) belongs to me (userId:62405606888475648). Join me in enjoying the next generation information browser https://follow.is.

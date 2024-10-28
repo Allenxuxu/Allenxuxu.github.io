@@ -74,4 +74,3 @@ LABEL Name=hello-gin Version=0.0.1
 &amp;lt;pre&amp;gt;&amp;lt;code&amp;gt;curl --request GET --url http://192.168.0.1:8080/greeter
 &amp;lt;/code&amp;gt;&amp;lt;/pre&amp;gt;&amp;lt;h1 id=&amp;#34;总结&amp;#34;&amp;gt;总结&amp;lt;/h1&amp;gt;
 &amp;lt;p&amp;gt;主要简单演练了一遍Docker Swarm 集群部署以及微服务部署的一个简单场景部署。相较于 K8S 的强大功能，Swarm 似乎显得有些多余，但是 Swarm 的简单明了在小厂中未必有没有用武之地吧。&amp;lt;/p&amp;gt;</description></item></channel></rss>
-This message is used to verify that this feed (feedId:73287159832503296) belongs to me (userId:62405606888475648). Join me in enjoying the next generation information browser https://follow.is.

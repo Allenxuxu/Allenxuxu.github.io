@@ -5789,4 +5789,3 @@ cd srv/hello &amp;amp;amp;&amp;amp;amp; make run
 [GIN] 2019/05/14 - 14:52:48 | 200 | 13.821193ms | 127.0.0.1 | GET /user/test
 &amp;lt;/code&amp;gt;&amp;lt;/pre&amp;gt;&amp;lt;p&amp;gt;通过usr API服务的输出，我们可以看到重试一次后，客户端成功请求了另一个实例。&amp;lt;/p&amp;gt;
 &amp;lt;p&amp;gt;github完整代码地址 &amp;lt;a href=&amp;#34;https://github.com/Allenxuxu/microservices&amp;#34;&amp;gt;https://github.com/Allenxuxu/microservices&amp;lt;/a&amp;gt;&amp;lt;/p&amp;gt;</description></item></channel></rss>
-This message is used to verify that this feed (feedId:73287159832503296) belongs to me (userId:62405606888475648). Join me in enjoying the next generation information browser https://follow.is.

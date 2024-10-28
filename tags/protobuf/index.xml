@@ -20,4 +20,3 @@ ls config/*.pb.go | xargs -n1 -IX bash -c &amp;lt;span style=&amp;#34;color:#e6d
 &amp;lt;span style=&amp;#34;color:#a6e22e&amp;#34;&amp;gt;XXX_sizecache&amp;lt;/span&amp;gt; &amp;lt;span style=&amp;#34;color:#66d9ef&amp;#34;&amp;gt;int32&amp;lt;/span&amp;gt; &amp;lt;span style=&amp;#34;color:#e6db74&amp;#34;&amp;gt;`json:&amp;amp;#34;-&amp;amp;#34;`&amp;lt;/span&amp;gt;
 }
 &amp;lt;/code&amp;gt;&amp;lt;/pre&amp;gt;&amp;lt;/div&amp;gt;&amp;lt;p&amp;gt;使用时，根据需要修改 &amp;lt;code&amp;gt;config/config.proto&amp;lt;/code&amp;gt; 和 &amp;lt;code&amp;gt;config/*.pb.go&amp;lt;/code&amp;gt; 即可。&amp;lt;/p&amp;gt;</description></item></channel></rss>
-This message is used to verify that this feed (feedId:73287159832503296) belongs to me (userId:62405606888475648). Join me in enjoying the next generation information browser https://follow.is.
